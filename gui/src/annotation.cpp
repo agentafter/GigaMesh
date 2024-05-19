@@ -336,12 +336,28 @@ std::string Annotation::toHTML(){
 
 
 QString Annotation::formatFileNameFromFormatString(QString formatstr){
+    QMap<QString,QString> purposeToVals;
     for(int i=0;i<this->annotationbody.count();i++){
         QJsonObject curitem=this->annotationbody.at(i).toObject();
         if(curitem.contains("purpose") && curitem.contains("value")){
             QString purpose=curitem.find("purpose")->toString();
-            formatstr=formatstr.replace("["+purpose+"]",curitem.find("value")->toString());
+            if(!purposeToVals.contains(purpose)){
+                purposeToVals[purpose]="";
+            }
+            if(purposeToVals[purpose]!=""){
+                purposeToVals[purpose]+="."+curitem.find("value")->toString();
+            }else{
+                purposeToVals[purpose]=curitem.find("value")->toString();
+            }
+        }else if(curitem.contains("purpose") && !curitem.contains("value")){
+            QString purpose=curitem.find("purpose")->toString();
+            if(!purposeToVals.contains(purpose)){
+                purposeToVals[purpose]="";
+            }
         }
+    }
+    for(auto it = purposeToVals.keyValueBegin(); it != purposeToVals.keyValueEnd(); ++it){
+        formatstr=formatstr.replace("["+it->first+"]",it->second);
     }
     return formatstr;
 }

@@ -54,7 +54,7 @@ void QGMDialogExportAnnotations::exportAnnotations(){
     QString outpath="";
     QString formatstr="";
     if(chosenformat.contains("Individual PLY Files")){
-        std::string titlestring="Choose file export pattern.\n No input equals to default name.\n The following variables will be replaced:\n";
+        std::string titlestring="Choose file export pattern.\nNo input equals to default name.\nThe following variables will be replaced:\n";
         for(const std::string& fieldname:this->fieldnames){
             titlestring+="["+fieldname+"] ";
         }
@@ -63,7 +63,10 @@ void QGMDialogExportAnnotations::exportAnnotations(){
             return;
         }
         bool ok;
-        formatstr=QInputDialog::getText(this,"Choose export filename pattern",QString::fromStdString(titlestring),QLineEdit::Normal);
+        formatstr=QInputDialog::getText(this,"Choose export filename pattern",QString::fromStdString(titlestring),QLineEdit::Normal,QDir::home().dirName(), &ok);
+        if(!ok){
+            return;
+        }
         format="PLYFiles";
     }
     if(this->onlyBorderCheckBox->isChecked()){
