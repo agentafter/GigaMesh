@@ -81,13 +81,17 @@ class MeshWidget : public QGLWidget, public MeshWidgetParams, public MeshGLColor
 
     std::list<Annotation*> annotationlist;
 
+
+
+    QJsonObject currentannotationtemplate;
+
     MeshQt*             mMeshVisual;
 
 public:
 	// Constructor and Destructor:
 	MeshWidget( const QGLFormat& format, QWidget* parent );
 	~MeshWidget() override;
-
+    QMap<QString,QJsonObject> annotationtemplates;
     std::list<Annotation*> getAnnotations();
     MeshQt *getMesh();
 	bool    getViewPortResolution( double& rRealWidth, double& rRealHeight ) const;
@@ -123,6 +127,7 @@ private slots: // ... to be avoided - for compatibility of old methods only!
 
 private:
 			bool    paramFlagChanged(const eParamFlag rFlagNr );
+            void    initializeDefaultAnnotationTemplate();
 
 private slots:
     virtual bool    setPlaneHNFByView();

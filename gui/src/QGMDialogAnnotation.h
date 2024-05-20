@@ -24,12 +24,14 @@ class QGMDialogAnnotation : public QDialog {
 
     QList<QString> inputmap;
 
+
+
 public:
     //QGMDialogAnnotation(QJsonObject templatejson,QWidget *parent = nullptr);
     QGMDialogAnnotation(QJsonObject templatejson, Annotation* annodata, QWidget *parent = nullptr);
     void createInputFieldByType(const QString& inputtype,int linecounter,const QString& key,QGridLayout* gridLayout,QWidget* curwidget,const QJsonObject& data,bool hasdata,QJsonArray curanno);
     void addCategoryIndependentFields(QWidget* curwidget,int linecounter,QGridLayout* gridLayout,QJsonArray curanno,QJsonArray tags);
-
+    QJsonObject getTemplateFromAnnotationData(QJsonArray annotationbody);
 
     signals:
 

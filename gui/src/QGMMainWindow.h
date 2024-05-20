@@ -104,6 +104,7 @@ public slots:
     void exportAnnotations();
     void createAnnotation();
     void deleteAnnotation();
+    void chooseAnnotationTemplate();
 	bool fileOpen( QAction* rFileAction );
 	void menuImportFunctionValues();
     void menuImportLabels();

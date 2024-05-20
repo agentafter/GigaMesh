@@ -212,6 +212,7 @@
     <addaction name="actionLoad_Annotations_From_File"/>
     <addaction name="actionExport_Annotations"/>
     <addaction name="actionMarkAnnotation"/>
+    <addaction name="actionChoose_Annotation_Template"/>
     <addaction name="actionEdit_Annotation_Templates"/>
     <addaction name="separator"/>
     <addaction name="actionLabelKMeansVertPos"/>
@@ -4860,6 +4861,11 @@ The latter will be shown, when the processing has finished.</string>
   <action name="actionColor_Annotations">
    <property name="text">
     <string>Color Annotations</string>
+   </property>
+  </action>
+  <action name="actionChoose_Annotation_Template">
+   <property name="text">
+    <string>Choose Annotation Template</string>
    </property>
   </action>
  </widget>

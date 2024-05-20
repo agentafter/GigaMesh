@@ -43,6 +43,7 @@
 #include "QGMDialogColorAnnotation.h"
 #include "QGMDialogImportAnnotations.h"
 #include "QGMDialogExportAnnotations.h"
+#include "QGMDialogChooseAnnotationTemplate.h"
 
 #ifdef ANALYTICS
 #include "analyticsConfig.h"
@@ -330,6 +331,7 @@ QGMMainWindow::QGMMainWindow( QWidget *parent, Qt::WindowFlags flags )
     QObject::connect( actionCreateAnnotation,      &QAction::triggered, this, &QGMMainWindow::createAnnotation  );
     QObject::connect( actionExport_Annotations,      &QAction::triggered, this, &QGMMainWindow::exportAnnotations);
     QObject::connect(actionLoad_Annotations_From_File, &QAction::triggered, this, &QGMMainWindow::loadAnnotationsFromFile);
+    QObject::connect(actionChoose_Annotation_Template, &QAction::triggered, this, &QGMMainWindow::chooseAnnotationTemplate);
     QObject::connect(actionColor_Annotations, &QAction::triggered, this, &QGMMainWindow::colorAnnotations);
     QObject::connect(actionEdit_Annotation_Templates, &QAction::triggered, this, &QGMMainWindow::createAnnotationTemplateWindow);
     QObject::connect(actionGet_Label_Info, &QAction::triggered, this, &QGMMainWindow::createAnnotationWindowFromTemplate);
@@ -1991,6 +1993,10 @@ void QGMMainWindow::exportAnnotations(){
 
 void QGMMainWindow::loadAnnotationsFromFile() {
     QGMDialogImportAnnotations(mMeshWidget,this).exec();
+}
+
+void QGMMainWindow::chooseAnnotationTemplate() {
+    QGMDialogChooseAnnotationTemplate(this->mMeshWidget).exec();
 }
 
 void QGMMainWindow::createAnnotation() {

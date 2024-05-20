@@ -116,6 +116,8 @@ set(GUI_UI_FILES
         src/QGMDialogColorAnnotation.h
 		src/convexhull.cpp
 		src/convexhull.h
+		src/QGMDialogChooseAnnotationTemplate.cpp
+		src/QGMDialogChooseAnnotationTemplate.h
 )
 
 #NOTE: instead of adding translations via resources, the ts-files can also be build by

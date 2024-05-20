@@ -103,6 +103,26 @@ void QGMDialogAnnotation::applyChanges(){
     this->close();
 }
 
+QJsonObject QGMDialogAnnotation::getTemplateFromAnnotationData(QJsonArray annotationbody){
+    QJsonObject result;
+    result["fields"]=QJsonObject();
+    result["tags"]=QJsonArray();
+    std::set<std::string> seenpurposes;
+    for(int i=0;i<annotationbody.count();i++){
+        QJsonObject curobj=annotationbody.at(i).toObject();
+        if(curobj.contains("purpose")){
+            QJsonObject thefield;
+            thefield["inputtype"]="text";
+            thefield["regex"]="";
+            thefield["uri"]="http://www.gigamesh.eu/ont/anno#"+curobj.find("purpose")->toString();
+            thefield["category"]=QJsonArray();
+            thefield.find("category")->toArray().push_back("default");
+            result["fields"].toObject()[curobj.find("purpose")->toString()]=thefield;
+        }
+    }
+    return result;
+}
+
 QStringList getTagsFromAnnotation(const QJsonArray& curanno){
     QStringList result;
     for(auto && i : curanno){
@@ -186,11 +206,6 @@ void QGMDialogAnnotation::addCategoryIndependentFields(QWidget* curwidget, int l
     gridLayout->addWidget(addSemTag,linecounter,2);
 }
 
-template<typename Base, typename T>
-inline bool instanceof(const T *ptr) {
-    return dynamic_cast<const Base*>(ptr) != nullptr;
-}
-
 QJsonObject QGMDialogAnnotation::saveAnnotationJSON(){
     QJsonObject result=QJsonObject();
     result.insert("body",QJsonArray());
@@ -199,10 +214,15 @@ QJsonObject QGMDialogAnnotation::saveAnnotationJSON(){
     auto *curlayout = dynamic_cast<QGridLayout *>(this->tabw->currentWidget()->layout());
     for(int i=0;i<curlayout->rowCount();i++){
         std::cout << "ROWCOUNT: " << std::to_string(i) << "\n";
+        std::cout << "Getting the label at position " << i << " " <<  0 <<"\n";
+        if(curlayout->itemAtPosition(i, 0)==nullptr){
+            continue;
+        }
         QLabel lab= (const QLabel) curlayout->itemAtPosition(i, 0)->widget();
         std::cout << "ROW: " << lab.text().toStdString() << "\n";
-        std::cout << "ROW: " << std::to_string(curlayout->itemAtPosition(i, 1)->widget()->height()) << "\n";
+        //std::cout << "ROW: " << std::to_string(curlayout->itemAtPosition(i, 1)->widget()->height()) << "\n";
         if(this->inputmap.at(i)=="QLineEdit"){
+            std::cout << "A QLineEdit "<< "\n";
             QLineEdit edit= (const QLineEdit) curlayout->itemAtPosition(i, 1)->widget();
             body.append(QJsonObject());
             body.last().toObject().insert("type","TextualBody");
@@ -238,9 +258,9 @@ void QGMDialogAnnotation::createInputFieldByType(const QString& inputtype, int l
     numberregex.setCaseSensitivity(Qt::CaseInsensitive);
     numberregex.setPatternSyntax(QRegExp::RegExp);
     QHash<QString,QString> valmap=getValuesFromAnnotation(curanno);
+    auto * label = new QLabel(curwidget);
+    label->setText(key+":");
     if(inputtype=="text" || inputtype=="number"){
-        auto * label = new QLabel(curwidget);
-        label->setText(key+":");
         QRegExpValidator regValidator( numberregex, 0 );
         this->inputmap.append("QLineEdit");
         auto * edit =new QLineEdit(curwidget);
@@ -252,11 +272,8 @@ void QGMDialogAnnotation::createInputFieldByType(const QString& inputtype, int l
         if(inputtype=="number"){
             edit->setValidator( &regValidator );
         }
-        gridLayout->addWidget(label,linecounter,0);
         gridLayout->addWidget(edit,linecounter,1);
-    }else if(inputtype=="select" && hasdata){
-        auto * label = new QLabel(curwidget);
-        label->setText(key+":");
+    }else if((inputtype=="select" || inputtype=="slider") && hasdata){
         auto * cbox=new QComboBox(curwidget);
         this->inputmap.append("QComboBox");
         int selectedindex=-1;
@@ -277,11 +294,8 @@ void QGMDialogAnnotation::createInputFieldByType(const QString& inputtype, int l
         if(selectedindex!=-1){
             cbox->setCurrentIndex(selectedindex);
         }
-        gridLayout->addWidget(label,linecounter,0);
         gridLayout->addWidget(cbox,linecounter,1);
     }else if(inputtype=="paleocodage"){
-        auto * label = new QLabel(curwidget);
-        label->setText(key+":");
         this->inputmap.append("QLineEdit");
         QRegExpValidator regValidator( numberregex, 0 );
         auto * edit =new QLineEdit(curwidget);
@@ -293,9 +307,9 @@ void QGMDialogAnnotation::createInputFieldByType(const QString& inputtype, int l
         if(inputtype=="number"){
             edit->setValidator( &regValidator );
         }
-        gridLayout->addWidget(label,linecounter,0);
         gridLayout->addWidget(edit,linecounter,1);
         /*auto svgw=new QSvgWidget(this);
         gridLayout->addWidget(svgw,linecounter,2);*/
     }
+    gridLayout->addWidget(label,linecounter,0);
 }

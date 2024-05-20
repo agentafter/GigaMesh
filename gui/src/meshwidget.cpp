@@ -77,6 +77,7 @@ MeshWidget::MeshWidget( const QGLFormat &format, QWidget *parent )
     setContextMenuPolicy(Qt::CustomContextMenu);
 	setAutoFillBackground( false );
 	setAutoBufferSwap( false ); // to preven flickering in ::paintEvent when QPainter.end is called!
+    initializeDefaultAnnotationTemplate();
 	// Store pointer to the main window.
 	mMainWindow = static_cast<QGMMainWindow*>(parent);
     annotationlist=list<Annotation*>();
@@ -6936,6 +6937,21 @@ bool MeshWidget::exportAnnotationAsMesh(){
         }
     }
     return true;
+}
+
+void MeshWidget::initializeDefaultAnnotationTemplate(){
+    QJsonObject templatee;
+    templatee["name"]="Default Template";
+    templatee["id"]="defaulttemplate";
+    templatee["fields"]=QJsonObject();
+    QJsonObject commentfield;
+    commentfield["type"]="text";
+    commentfield["regex"]="";
+    commentfield["uri"]="http://www.w3.org/2000/01/rdf-schema#comment";
+    commentfield["category"]=QJsonArray();
+    commentfield.find("category")->toArray().push_back("default");
+    templatee["fields"].toObject()["comment"]=commentfield;
+    this->annotationtemplates["default"]=templatee;
 }
 
 bool MeshWidget::exportAnnotationAsJSON(){
