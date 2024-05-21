@@ -6133,7 +6133,7 @@ void MeshWidget::paintEvent( QPaintEvent *rEvent ) {
     mMeshVisual->glPaint();
 
 	//! Optional; draw RGB histogram of the scene. Highly recommended to be calle before paintScreenInfo, paintOrthoGrid and paintHistogram!
-	paintHistogramScence(); // This sould be first -- otherwise unwanted elements like logos are accounted to (this color) histogram.
+    paintHistogramScene(); // This sould be first -- otherwise unwanted elements like logos are accounted to (this color) histogram.
 
 	//! Draw (optional) Grid(s) in orthographic and perspective projection. The latter may give the impression of scale, but can not be used as such!
 	glBlendFunc( GL_DST_COLOR, GL_ZERO ); // Allows for a nice overlay.
@@ -6142,6 +6142,8 @@ void MeshWidget::paintEvent( QPaintEvent *rEvent ) {
 	bool showGridPolarLines;
 	bool showGridPolarCircles;
 	bool showGridHighLightCenter;
+    bool showAnnoLegend;
+    getParamFlagMeshWidget( SHOW_ANNOLEGEND, &showAnnoLegend );
 	getParamFlagMeshWidget( SHOW_GRID_RECTANGULAR, &showGridRect );
 	getParamFlagMeshWidget( SHOW_GRID_POLAR_LINES, &showGridPolarLines );
 	getParamFlagMeshWidget( SHOW_GRID_POLAR_CIRCLES, &showGridPolarCircles );
@@ -6187,6 +6189,10 @@ void MeshWidget::paintEvent( QPaintEvent *rEvent ) {
 	if( showGigaMeshLogo | showGigaMeshLogoForced ) {
 		paintRasterImage( TEXMAP_GIGAMESH_LOGO, -20, -20, 150, 150 );
 	}
+
+    if( showAnnoLegend ) {
+        paintRasterImage( TEXMAP_ANNOLEGEND, -20, -20, 150, 150 );
+    }
 
 	//! Draw the keyboard layout.
 	bool showKeyboardCamera = false;
@@ -6334,36 +6340,44 @@ bool MeshWidget::paintBackgroundShader( QOpenGLShaderProgram** rShaderProgram ) 
 }
 
 
-bool MeshWidget::createAnnotationLegend(QString attribute, std::map<std::string,uint64_t> mappings){
-    int width = 1024;
-    int height = 768;
-    int offset = 25;
+bool MeshWidget::createAnnotationLegend(const QString& attribute, std::map<std::string,uint64_t> mappings){
+    int offset = 1;
     int w = 400;
     int h = 200;
-
+    std::cout << "Create Annotation Legend " << "\n";
+    QFont font("times",10);
+    QFontMetrics fm(font);
     QString thetext="Coloring for attribute "+attribute+"\n";
-    /*for(std::string mapp:mappings){
-        thetext+=""
+    int theheight=fm.height();
+    int maxwidth=fm.horizontalAdvance("Coloring for attribute "+attribute);
+    for(auto const& [mapp,val]:mappings){
+        theheight+=fm.height();
+        if(fm.horizontalAdvance(QString::fromStdString(mapp))>maxwidth){
+            maxwidth=fm.horizontalAdvance(QString::fromStdString(mapp));
+        }
     }
-
-    QImage image(QSize(width,height),QImage::Format_RGB32);
+    w=maxwidth;
+    h=theheight;
+    QImage image(QSize(w+5,h+5),QImage::Format_RGB32);
     QPainter painter(&image);
-    painter.setBrush(QBrush(aColor));
-    painter.fillRect(QRectF(0,0,width,height),Qt::darkGreen);
-    qDebug() << (width-w-offset)/2 << "\t" << (height-h-offset)/2 << "\t" << w << "\t" << h;
-    QRect aRect = QRect( (width-w)/2, (height-h)/2, w, h );
-    QRect aRectOffset = QRect( (width-w+offset)/2, (height-h+offset)/2, w-(offset/2), h-(offset/2) );
-    painter.fillRect(QRect(aRect),Qt::white);
-    painter.setPen(QPen(Qt::black));
-    painter.setFont(QFont( "Courier", 20) );
-    painter.drawText(QRect(aRectOffset),text);
-    this->paintRasterImage()
-    QDir aDir = QDir(path);
-    if ( aDir.mkpath(path) )
-        return image.save(path + "/" + imageName);
-    else
-        return image.save(imageName);
-        */
+    painter.setBrush(QBrush(Qt::black));
+    painter.fillRect(QRectF(0,0,w,h),Qt::lightGray);
+    int curheight=-20;
+    for(auto const& [mapp,color]:mappings) {
+        QRect aRect = QRect( -fm.horizontalAdvance(QString::fromStdString(mapp)), curheight, fm.horizontalAdvance(QString::fromStdString(mapp)), fm.height());
+        QRect aRectOffset = QRect( (w+offset)/2, (curheight+offset)/2, w-(offset/2), h-(offset/2) );
+        painter.fillRect(QRect(aRect),Qt::white);
+        painter.setPen(QPen(QColor(color)));
+        painter.setFont(QFont( "Courier", 20) );
+        painter.drawText(QRect(aRectOffset),QString::fromStdString(mapp + "\n"));
+        std::cout << "Drawing text: " << mapp << " in color " << color << "\n";
+        curheight+=fm.height();
+    }
+    painter.end();
+    std::cout << "Draw Raster image " << w << h << "\n";
+    initializeTextureMap( TEXMAP_ANNOLEGEND, &image );
+    paintRasterImage( TEXMAP_ANNOLEGEND, -5, -5, w, h);
+    this->setParamFlagMeshWidget(SHOW_ANNOLEGEND,true);
     return true;
 }
 
@@ -6671,7 +6685,7 @@ bool MeshWidget::paintHistogram() {
 }
 
 //! Shows the RGB histogram of the scene.
-bool MeshWidget::paintHistogramScence() {
+bool MeshWidget::paintHistogramScene() {
 #ifdef DEBUG_SHOW_ALL_METHOD_CALLS
 	cout << "[MeshWidget::" << __FUNCTION__ << "]" << endl;
 #endif
@@ -6917,7 +6931,7 @@ void MeshWidget::showContextMenu(const QPoint &pos) {
 }
 
 bool MeshWidget::openEditAnnotationDialog(){
-    QGMDialogAnnotation(QJsonObject(), mLastAnnotation, nullptr).exec();
+    QGMDialogAnnotation(this->currentannotationtemplate, mLastAnnotation, nullptr).exec();
     return true;
 }
 
@@ -6987,9 +7001,9 @@ void MeshWidget::calculateRelativeAnnotationPositions(){
     }
 }
 
-void MeshWidget::colorAnnotationsByAttribute(const QString& attribute){
+std::map<std::string,uint64_t>  MeshWidget::colorAnnotationsByAttribute(const QString& attribute){
     if(this->annotationlist.empty()){
-        return;
+        return std::map<std::string,uint64_t>();
     }
     this->getMesh()->labelVerticesNone();
     std::map<std::string,uint64_t> seenatts;
@@ -7010,10 +7024,8 @@ void MeshWidget::colorAnnotationsByAttribute(const QString& attribute){
             }
         }
     }
-    //this->getMesh()->labelVerticesEqualFV();
-    //this->getMesh()->changedVertFuncVal();
     this->getMesh()->labelsChanged();
-    //this->getMesh()->changedMesh();
+    return seenatts;
 }
 
 //! Handles the event when the mouse is moved.

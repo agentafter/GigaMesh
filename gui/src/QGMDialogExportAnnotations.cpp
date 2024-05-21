@@ -15,6 +15,7 @@ QGMDialogExportAnnotations::QGMDialogExportAnnotations(std::list<Annotation*> an
     this->themesh=themesh;
     this->fieldnames=fieldnames;
     this->setWindowTitle("Export Annotations");
+    this->setWindowIcon( QIcon( _GIGAMESH_LOGO_ ) );
     auto * gridLayout = new QGridLayout(this);
     auto* annostylecboxLabel=new QLabel();
     annostylecboxLabel->setText("Export Format:");

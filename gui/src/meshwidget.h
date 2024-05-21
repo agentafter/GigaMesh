@@ -105,7 +105,7 @@ public slots: // ... overloaded from MeshWidgetParams:s
     void calculateRelativeAnnotationPositions();
     bool exportAnnotationAsJSON();
     bool openEditAnnotationDialog();
-    void colorAnnotationsByAttribute(const QString& attribute);
+    std::map<std::string,uint64_t> colorAnnotationsByAttribute(const QString& attribute);
     bool createAnnotation();
     bool deleteAnnotation();
     std::set<std::string> getCommonAnnotationFieldNames();
@@ -273,7 +273,7 @@ public slots:
 	//.
 	bool screenshotSVG();
 	bool screenshotSVG(const QString& rFileName, const QString& rFileNamePNG );
-
+    bool createAnnotationLegend(const QString& attribute, std::map<std::string,uint64_t> mappings);
     bool checkInkscapeAvailability();
 	bool exportPlaneIntersectPolyLinesSVG();
 	bool screenshotSVGexportPlaneIntersections( double rOffsetX, double rOffsetY, double rPolyLineWidth, double axisOffset, SvgWriter& svgWriter, const std::set<unsigned int>& polylineIDs );
@@ -339,7 +339,7 @@ private:
 	void paintEvent( QPaintEvent *rEvent ) override;
 	void paintSelection();
 	bool paintHistogram();
-	bool paintHistogramScence();
+	bool paintHistogramScene();
 	void resizeEvent( QResizeEvent * event ) override;
 
 	// Keyboard and Mouse interaction:
@@ -416,6 +416,7 @@ private:
 	//------------------------------------------------------------------------------------------------------------------------------------------------------
 	enum eTextureMaps {
 		TEXMAP_GIGAMESH_LOGO,              //!< Image showing the GigaMesh logo.
+        TEXMAP_ANNOLEGEND,                  //!< Image showing the annotation coloring legend.
 		TEXMAP_KEYBOARD_LAYOUT,            //!< Image showing the keyboard layout.
 		TEXMAP_HISTOGRAM_SCENE,            //!< Computed image showing the histogram of the scence.
 		TEXMAP_HISTOGRAM_MESH_FUNCVAL,     //!< Computed using the function values of the mesh.
@@ -428,7 +429,6 @@ private:
 	//------------------------------------------------------------------------------------------------------------------------------------------------------
 	bool initializeTextureMap( eTextureMaps rTextureMap, const QString& rFileName );
 	bool initializeTextureMap( eTextureMaps rTextureMap, QImage* rImage );
-    bool createAnnotationLegend(QString attribute, std::map<std::string,uint64_t> mappings);
 	void initializeShader(const QString& rFileName, QOpenGLShaderProgram** rShaderProgram );
 	bool paintBackgroundShader( QOpenGLShaderProgram** rShaderProgram );
 	bool paintRasterImage( eTextureMaps rTexMap, int rPixelX, int rPixelY, int rPixelWidth, int rPixelHeight );

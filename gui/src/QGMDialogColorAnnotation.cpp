@@ -14,6 +14,7 @@ QGMDialogColorAnnotation::QGMDialogColorAnnotation(MeshWidget* themesh) {
     auto * titlelabel=new QLabel(this);
     titlelabel->setText("Color Annotations By Attribute ");
     this->setWindowTitle("Color Annotations By Attribute");
+    this->setWindowIcon( QIcon( _GIGAMESH_LOGO_ ) );
     auto * chooseattlabel=new QLabel(this);
     titlelabel->setText("Choose Attribute:");
     gridLayout->addWidget(chooseattlabel,0,0,1,1);
@@ -36,6 +37,7 @@ QGMDialogColorAnnotation::QGMDialogColorAnnotation(MeshWidget* themesh) {
 
 void QGMDialogColorAnnotation::colorAnnotationsByAttribute(){
    QString attribute=this->attCBox->currentText();
-   this->themesh->colorAnnotationsByAttribute(attribute);
+   std::map<std::string,uint64_t> mappings=this->themesh->colorAnnotationsByAttribute(attribute);
+   this->themesh->createAnnotationLegend(attribute, mappings);
    this->close();
 }

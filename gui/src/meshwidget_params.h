@@ -65,6 +65,7 @@ class MeshWidgetParams {
 						 SHOW_GRID_POLAR_CIRCLES,   //!< Concentric circles of a polar grid, best to be used with orthographic projection.
 						 SHOW_GRID_HIGHLIGHTCENTER_FRONT, //! If enabled, the whole crosshair of the center highlight will be rendered on top of the mesh
 		                 SHOW_HISTOGRAM,            //!< Turn the Mesh Histogram on/off.
+                         SHOW_ANNOLEGEND,            //!< Turn the Mesh Histogram on/off.
 		                 SHOW_HISTOGRAM_LOG,        //!< Apply log(arithm) to the Mesh Histogram.
 		                 SHOW_HISTOGRAM_SCENE,      //!< Turn Histogram for the OpenGL scene on/off.
 		                 SHOW_HISTOGRAM_SCENE_LOG,  //!< Apply log(arithm) to the OpenGL scene histogram.

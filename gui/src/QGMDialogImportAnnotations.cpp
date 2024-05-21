@@ -12,6 +12,7 @@ QGMDialogImportAnnotations::QGMDialogImportAnnotations(MeshWidget* mMeshWidget,Q
     this->meshwidget=mMeshWidget;
     int linecounter=0;
     this->setWindowTitle("Import Annotations");
+    this->setWindowIcon( QIcon( _GIGAMESH_LOGO_ ) );
     auto * gridLayout = new QGridLayout(this);
     auto* annoctemplatecboxLabel=new QLabel();
     annoctemplatecboxLabel->setText("Color Template:");

@@ -16,16 +16,17 @@
 
 
 QGMDialogAnnotation::QGMDialogAnnotation(QJsonObject annotemplate, Annotation* annodata, QWidget *parent) : QDialog(parent) {
-    if(annotemplate.empty()){
-        QFile jsonfile;
-        jsonfile.setFileName("C:/Users/timo.homburg/git/GigaMesh/cmake-build-debug/annotemplates.json");
-        jsonfile.open(QIODevice::ReadOnly);
-        QByteArray data = jsonfile.readAll();
-        qDebug()<<QJsonDocument::fromJson(data);
-        QJsonDocument annoDoc;
-        annoDoc=QJsonDocument::fromJson(data);
-        annotemplate=annoDoc.array().at(0).toObject();
-    }
+    //if(annotemplate.empty()){
+    this->annodata=annodata;
+    QFile jsonfile;
+    jsonfile.setFileName("C:/Users/timo.homburg/git/GigaMesh/cmake-build-debug/annotemplates.json");
+    jsonfile.open(QIODevice::ReadOnly);
+    QByteArray data = jsonfile.readAll();
+    qDebug()<<QJsonDocument::fromJson(data);
+    QJsonDocument annoDoc;
+    annoDoc=QJsonDocument::fromJson(data);
+    annotemplate=annoDoc.array().at(0).toObject();
+    //}
     auto * gridLayout = new QGridLayout(this);
     int linecounter=0;
     auto tablabels=new QHash<QString,int>();
@@ -100,6 +101,7 @@ QGMDialogAnnotation::QGMDialogAnnotation(QJsonObject annotemplate, Annotation* a
 void QGMDialogAnnotation::applyChanges(){
     std::cout << "Apply Changes" << endl;
     this->saveAnnotationJSON();
+    //this->annodata->setAnnotationBody(result);
     this->close();
 }
 

@@ -10,6 +10,7 @@ QGMDialogChooseAnnotationTemplate::QGMDialogChooseAnnotationTemplate(MeshWidget*
     auto * gridLayout = new QGridLayout(this);
     auto * titlelabel=new QLabel(this);
     this->setWindowTitle("Choose Annotation Template");
+    this->setWindowIcon( QIcon( _GIGAMESH_LOGO_ ) );
     this->chooseAnnotationTemplate=new QComboBox(this);
     this->themwidget=themwidget;
     titlelabel->setText("Choose Annotation Template: ");

@@ -20,11 +20,11 @@ class QGMDialogAnnotation : public QDialog {
 
     QJsonArray curanno;
 
+    Annotation* annodata;
+
     QListWidget* ledit;
 
     QList<QString> inputmap;
-
-
 
 public:
     //QGMDialogAnnotation(QJsonObject templatejson,QWidget *parent = nullptr);

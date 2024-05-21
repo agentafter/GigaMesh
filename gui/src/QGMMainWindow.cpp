@@ -2139,6 +2139,8 @@ void QGMMainWindow::updateWidgetShowFlag(MeshWidgetParams::eParamFlag rFlag, boo
 		break;
 	case MeshWidgetParams::SHOW_GRID_HIGHLIGHTCENTER_FRONT:
 		break;
+    case MeshWidgetParams::SHOW_ANNOLEGEND:
+        break;
 	case MeshWidgetParams::SHOW_HISTOGRAM:
 		break;
 	case MeshWidgetParams::SHOW_HISTOGRAM_LOG:
