@@ -2,9 +2,24 @@
 // Created by timo.homburg on 06.05.2024.
 //
 
-#include <QFile>
+
 #include "annotationtemplate.h"
 
+AnnotationTemplate::AnnotationTemplate(QByteArray data){
+    QJsonDocument annoDoc;
+    annoDoc=QJsonDocument::fromJson(data);
+    //templatejson=annoDoc.array().at(0).toObject();
+}
+
+AnnotationTemplate::AnnotationTemplate(QString filepath){
+    QFile jsonfile;
+    jsonfile.setFileName(filepath);
+    jsonfile.open(QIODevice::ReadOnly);
+    QByteArray data = jsonfile.readAll();
+    QJsonDocument annoDoc;
+    annoDoc=QJsonDocument::fromJson(data);
+    //templatejson=annoDoc.array().at(0).toObject();
+}
 
 void AnnotationTemplate::importTemplateJSON(QString filepath){
     /*QFile jsonfile;
@@ -16,6 +31,15 @@ void AnnotationTemplate::importTemplateJSON(QString filepath){
     annoDoc=QJsonDocument::fromJson(data);
     annotemplate=annoDoc.array().at(0).toObject();*/
 }
+
+bool AnnotationTemplate::validityCheck(){
+    for(int i=0;i<this->templatejson.size();i++) {
+        if(!this->templatejson.contains("fields")){
+            return false;
+        }
+    }
+    return true;
+};
 
 void AnnotationTemplate::exportTemplateJSON(QString filepath){
     /*for (int i = 0; i < templatejson.count(); i++) {

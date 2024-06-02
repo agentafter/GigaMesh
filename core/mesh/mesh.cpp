@@ -2090,6 +2090,7 @@ bool Mesh::deSelMVertsAll() {
 	return true;
 }
 
+
 //! Removes vertices without a label from mSelectedMVerts -- SelMVerts.
 //! @returns true, when vertices were deselected.
 bool Mesh::deSelMVertsNoLabel() {

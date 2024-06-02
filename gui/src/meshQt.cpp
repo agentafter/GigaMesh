@@ -4306,6 +4306,7 @@ bool MeshQt::editMetaData() {
 			return( false );
 		}
 		getModelMetaDataRef().setModelMetaString( ModelMetaData::META_MODEL_UNIT, newUnit.toStdString() );
+
     }
 
 	return( true );

@@ -186,7 +186,7 @@ private:
         QString descr; //description for the Helper Text
     };
     std::vector<LatexPlaceholder> mPdfViewsPlaceholders;
-
+    QImage* annolegendimage;
 
     void setLatexPlaceholderDefinition();
     bool checkUserdefinedLatexFile(QString *latexTemplate,std::vector<LatexPlaceholder> rPlaceHolders);
@@ -236,6 +236,7 @@ private:
 		GLuint mColorTextureID;
 		GLuint mDepthTextureID;
 		GLuint mFboID;
+
 		QGLContext* mContext;
 		int mTexWidth;
 		int mTexHeight;
@@ -273,7 +274,7 @@ public slots:
 	//.
 	bool screenshotSVG();
 	bool screenshotSVG(const QString& rFileName, const QString& rFileNamePNG );
-    bool createAnnotationLegend(const QString& attribute, std::map<std::string,uint64_t> mappings);
+    bool createAnnotationLegend(const QString& attribute, const std::map<std::string,uint64_t>& mappings);
     bool checkInkscapeAvailability();
 	bool exportPlaneIntersectPolyLinesSVG();
 	bool screenshotSVGexportPlaneIntersections( double rOffsetX, double rOffsetY, double rPolyLineWidth, double axisOffset, SvgWriter& svgWriter, const std::set<unsigned int>& polylineIDs );

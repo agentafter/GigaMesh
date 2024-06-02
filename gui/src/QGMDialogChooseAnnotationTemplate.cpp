@@ -3,7 +3,7 @@
 //
 
 #include "QGMDialogChooseAnnotationTemplate.h"
-
+#include "annotationtemplate.h"
 
 QGMDialogChooseAnnotationTemplate::QGMDialogChooseAnnotationTemplate(MeshWidget* themwidget){
     this->templatelist=themwidget->annotationtemplates;
@@ -18,17 +18,38 @@ QGMDialogChooseAnnotationTemplate::QGMDialogChooseAnnotationTemplate(MeshWidget*
     this->chooseAnnotationTemplate->addItem("Default Template");
     this->chooseAnnotationTemplate->addItems(templatelist.keys());
     gridLayout->addWidget(this->chooseAnnotationTemplate,0,1,1,2);
+    this->annotationtemplateFromURLLabel=new QLabel("Annotation Template from URL:",this);
+    this->annotationtemplateFromURL=new QLineEdit(this);
+    auto* checkTemplateURL=new QPushButton();
+    gridLayout->addWidget(annotationtemplateFromURLLabel,1,0);
+    gridLayout->addWidget(annotationtemplateFromURL,1,1);
+    gridLayout->addWidget(checkTemplateURL,1,2);
     auto * okbutton=new QPushButton(this);
     okbutton->setText("Ok");
-    gridLayout->addWidget(okbutton,1,1);
+    gridLayout->addWidget(okbutton,2,1);
     auto * cancelbutton=new QPushButton(this);
     cancelbutton->setText("Cancel");
-    gridLayout->addWidget(cancelbutton,1,0);
+    gridLayout->addWidget(cancelbutton,2,0);
+    connect(checkTemplateURL,SIGNAL(clicked()),
+            this,SLOT(checkTemplateURL()));
     connect(okbutton,SIGNAL(clicked()),
             this,SLOT(applyChanges()));
     connect(cancelbutton,SIGNAL(clicked()),
             this,SLOT(close()));
     this->setLayout(gridLayout);
+}
+
+void QGMDialogChooseAnnotationTemplate::checkTemplateURL(){
+    auto* fd=new FileDownloader(QUrl(this->annotationtemplateFromURL->text()),this);
+    connect(fd, SIGNAL (downloaded()), this, SLOT (handleDownloadResult()));
+}
+
+void QGMDialogChooseAnnotationTemplate::handleDownloadResult()
+{
+    QByteArray result=this->fd->downloadedData();
+
+    const AnnotationTemplate &temp = AnnotationTemplate(result);
+
 }
 
 void QGMDialogChooseAnnotationTemplate::applyTemplate(){

@@ -5542,7 +5542,9 @@ bool MeshWidget::createAnnotation(){
     anno->getBBOXVertices(0.5);
     this->annotationlist.push_back(anno);
     std::set<Vertex*> seeds;
-    this->getMesh()->labelVertices(anno->vertices,seeds);
+    std::cout << "Label Vertices: " ;
+    this->getMesh()->labelSelectedVertices(*selverts,false);
+    //this->getMesh()->labelVertices(anno->vertices,seeds);
     this->getMesh()->deSelMVertsAll();
     return true;
 }
@@ -6191,7 +6193,7 @@ void MeshWidget::paintEvent( QPaintEvent *rEvent ) {
 	}
 
     if( showAnnoLegend ) {
-        paintRasterImage( TEXMAP_ANNOLEGEND, -20, -20, 150, 150 );
+        paintRasterImage( TEXMAP_ANNOLEGEND, -20, -20, this->annolegendimage->width(), this->annolegendimage->height() );
     }
 
 	//! Draw the keyboard layout.
@@ -6340,12 +6342,12 @@ bool MeshWidget::paintBackgroundShader( QOpenGLShaderProgram** rShaderProgram ) 
 }
 
 
-bool MeshWidget::createAnnotationLegend(const QString& attribute, std::map<std::string,uint64_t> mappings){
+bool MeshWidget::createAnnotationLegend(const QString& attribute, const std::map<std::string,uint64_t>& mappings){
     int offset = 1;
     int w = 400;
     int h = 200;
     std::cout << "Create Annotation Legend " << "\n";
-    QFont font("times",10);
+    QFont font("times",20);
     QFontMetrics fm(font);
     QString thetext="Coloring for attribute "+attribute+"\n";
     int theheight=fm.height();
@@ -6358,25 +6360,28 @@ bool MeshWidget::createAnnotationLegend(const QString& attribute, std::map<std::
     }
     w=maxwidth;
     h=theheight;
-    QImage image(QSize(w+5,h+5),QImage::Format_RGB32);
-    QPainter painter(&image);
+    this->annolegendimage=new QImage(QSize(w,h),QImage::Format_RGB32);
+    QPainter painter(this->annolegendimage);
     painter.setBrush(QBrush(Qt::black));
     painter.fillRect(QRectF(0,0,w,h),Qt::lightGray);
+    painter.setPen(QColor(0,0,0,255));
+    painter.setFont(QFont( "Courier", 20));
+    painter.drawText(0,0,QString::fromStdString("HELLOOOOO"));
     int curheight=-20;
     for(auto const& [mapp,color]:mappings) {
-        QRect aRect = QRect( -fm.horizontalAdvance(QString::fromStdString(mapp)), curheight, fm.horizontalAdvance(QString::fromStdString(mapp)), fm.height());
-        QRect aRectOffset = QRect( (w+offset)/2, (curheight+offset)/2, w-(offset/2), h-(offset/2) );
-        painter.fillRect(QRect(aRect),Qt::white);
-        painter.setPen(QPen(QColor(color)));
-        painter.setFont(QFont( "Courier", 20) );
-        painter.drawText(QRect(aRectOffset),QString::fromStdString(mapp + "\n"));
-        std::cout << "Drawing text: " << mapp << " in color " << color << "\n";
+        //QRect aRect = QRect( -fm.horizontalAdvance(QString::fromStdString(mapp)), curheight, fm.horizontalAdvance(QString::fromStdString(mapp)), fm.height()*5);
+        QRect aRectOffset = QRect( -20, curheight, fm.horizontalAdvance(QString::fromStdString(mapp)), fm.height()*2 );
+        //painter.fillRect(QRect(aRect),Qt::white);
+        painter.setPen(QColor(0,0,0,255));
+        painter.setFont(QFont( "Courier", 20));
+        painter.drawText(-20,curheight,QString::fromStdString(mapp + "\n"));
+        std::cout << "Drawing text: " << mapp << " in color " << color << " at curheight " << curheight << " and curwidth " << "-20" << "\n";
         curheight+=fm.height();
     }
-    painter.end();
+
     std::cout << "Draw Raster image " << w << h << "\n";
-    initializeTextureMap( TEXMAP_ANNOLEGEND, &image );
-    paintRasterImage( TEXMAP_ANNOLEGEND, -5, -5, w, h);
+    initializeTextureMap( TEXMAP_ANNOLEGEND, this->annolegendimage );
+    //paintRasterImage( TEXMAP_ANNOLEGEND, -5, -5, w, h);
     this->setParamFlagMeshWidget(SHOW_ANNOLEGEND,true);
     return true;
 }
@@ -7052,7 +7057,7 @@ void MeshWidget::mouseMoveEvent( QMouseEvent* rEvent ) {
         if(!mLastAnnotation->isempty){
             if(mLastAnnotation->pointInAnnotationBBOX3D(clickPos.getX(),ylength-clickPos.getY(),clickPos.getZ())){
                 if(mLastAnnotation->leftOf!=nullptr && !mLastAnnotation->leftOf->isempty){
-                    QToolTip::showText(rEvent->globalPos(),QString::fromStdString(mLastAnnotation->leftOf->toHTML())+" "+QString::fromStdString(mLastAnnotation->toHTML()));
+                    QToolTip::showText(rEvent->globalPos(),/*QString::fromStdString(mLastAnnotation->leftOf->toHTML())+" "+*/QString::fromStdString(mLastAnnotation->toHTML()));
                 }else{
                     QToolTip::showText(rEvent->globalPos(),"No Left Of "+QString::fromStdString(mLastAnnotation->toHTML()));
 
@@ -7061,18 +7066,24 @@ void MeshWidget::mouseMoveEvent( QMouseEvent* rEvent ) {
             }
         }
         if(!finished) {
+            Annotation* foundanno=nullptr;
             for (Annotation* anno: annotationlist) {
                 if (anno->pointInAnnotationBBOX3D(clickPos.getX(), ylength-clickPos.getY(), clickPos.getZ())) {
                     if(anno->leftOf!=nullptr && !anno->leftOf->isempty){
-                        QToolTip::showText(rEvent->globalPos(),QString::fromStdString(anno->leftOf->toHTML())+" "+QString::fromStdString(anno->toHTML()));
+                        QToolTip::showText(rEvent->globalPos(),/*QString::fromStdString(anno->leftOf->toHTML())+" "+*/QString::fromStdString(anno->toHTML()));
                     }else{
-                        QToolTip::showText(rEvent->globalPos(), "No Left Of "+QString::fromStdString(anno->toHTML()));
+                        QToolTip::showText(rEvent->globalPos(), /*"No Left Of "+*/QString::fromStdString(anno->toHTML()));
                     }
                     std::cout << "BBOX Vertices: " << std::to_string(anno->bboxVertices.size()) << "All Vertices: " << std::to_string(anno->vertices.size()) << endl;
                     this->getMesh()->selectVertices(anno->bboxVertices, 2.0);
                     mLastAnnotation = anno;
+                    foundanno=anno;
                     break;
                 }
+            }
+            if(!mLastAnnotation->isempty &&foundanno==nullptr){
+                this->getMesh()->removeFromSelection(mLastAnnotation->vertices);
+                mLastAnnotation->isempty=true;
             }
         }
     }
