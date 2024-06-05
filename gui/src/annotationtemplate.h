@@ -15,10 +15,11 @@
 
 class AnnotationTemplate {
 
-    QJsonArray templatejson;
+    QJsonObject templatejson;
     void importTemplateJSON(QString filepath);
     void exportTemplateJSON(QString filepath);
     bool validityCheck();
+    QString toHTML();
     void addTextField(QString name,QString type);
 
 public:

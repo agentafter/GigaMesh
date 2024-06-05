@@ -113,8 +113,6 @@ set(PUBLIC_HEADERS_CORE ${CMAKE_CURRENT_SOURCE_DIR}/include/GigaMesh/printbuildi
 		mesh/MeshIO/JSONWriter.h
 		mesh/MeshIO/OFFWriter.cpp
 		mesh/MeshIO/OFFWriter.h
-		mesh/MeshIO/STLWriter.cpp
-		mesh/MeshIO/STLWriter.h
 		mesh/MeshIO/ThreeJSONWriter.cpp
 		mesh/MeshIO/ThreeJSONWriter.h
 )

@@ -72,7 +72,7 @@ class MeshGL : public Mesh, public MeshGLParams {
 
 				bool         labelsChanged()    override;
 				void         polyLinesChanged() override;
-
+        QColor* labelIDToColor(u_int64 labelid);
 		unsigned int selectedMVertsChanged() override;
 		unsigned int selectedMFacesChanged() override;
 

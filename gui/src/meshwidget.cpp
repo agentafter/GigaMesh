@@ -6364,25 +6364,26 @@ bool MeshWidget::createAnnotationLegend(const QString& attribute, const std::map
     QPainter painter(this->annolegendimage);
     painter.setBrush(QBrush(Qt::black));
     painter.fillRect(QRectF(0,0,w,h),Qt::lightGray);
-    painter.setPen(QColor(0,0,0,255));
-    painter.setFont(QFont( "Courier", 20));
-    painter.drawText(0,0,QString::fromStdString("HELLOOOOO"));
-    int curheight=-20;
+    painter.setPen(Qt::blue);
+    painter.setFont(QFont( "Courier", 30));
+    painter.drawText(0,0,"Coloring for attribute "+attribute);
+    int curheight=fm.height();
     for(auto const& [mapp,color]:mappings) {
         //QRect aRect = QRect( -fm.horizontalAdvance(QString::fromStdString(mapp)), curheight, fm.horizontalAdvance(QString::fromStdString(mapp)), fm.height()*5);
-        QRect aRectOffset = QRect( -20, curheight, fm.horizontalAdvance(QString::fromStdString(mapp)), fm.height()*2 );
-        //painter.fillRect(QRect(aRect),Qt::white);
-        painter.setPen(QColor(0,0,0,255));
-        painter.setFont(QFont( "Courier", 20));
-        painter.drawText(-20,curheight,QString::fromStdString(mapp + "\n"));
+        QRect aRectOffset = QRect( 0, curheight, fm.horizontalAdvance(QString::fromStdString(mapp)), fm.height()*2 );
+        painter.fillRect(QRect(aRectOffset),Qt::lightGray);
+        painter.setPen(color);
+        painter.setFont(QFont( "Courier", 30));
+        painter.drawText(0,curheight,QString::fromStdString(mapp + "\n"));
         std::cout << "Drawing text: " << mapp << " in color " << color << " at curheight " << curheight << " and curwidth " << "-20" << "\n";
         curheight+=fm.height();
     }
 
-    std::cout << "Draw Raster image " << w << h << "\n";
+    std::cout << "Draw Raster image " << w << " " << h << "\n";
     initializeTextureMap( TEXMAP_ANNOLEGEND, this->annolegendimage );
-    //paintRasterImage( TEXMAP_ANNOLEGEND, -5, -5, w, h);
+    paintRasterImage( TEXMAP_ANNOLEGEND, -5, -5, w, h);
     this->setParamFlagMeshWidget(SHOW_ANNOLEGEND,true);
+    this->annolegendimage->save("legend.png");
     return true;
 }
 
@@ -7081,8 +7082,9 @@ void MeshWidget::mouseMoveEvent( QMouseEvent* rEvent ) {
                     break;
                 }
             }
-            if(!mLastAnnotation->isempty &&foundanno==nullptr){
+            if(!mLastAnnotation->isempty && foundanno==nullptr){
                 this->getMesh()->removeFromSelection(mLastAnnotation->vertices);
+                QToolTip::hideText();
                 mLastAnnotation->isempty=true;
             }
         }

@@ -54,7 +54,6 @@
 #include "MeshIO/PlyWriter.h"
 #include "MeshIO/OFFWriter.h"
 #include "MeshIO/JSONWriter.h"
-#include "MeshIO/STLWriter.h"
 #include "MeshIO/ObjWriter.h"
 #include "MeshIO/VRMLWriter.h"
 #include "MeshIO/TxtWriter.h"
@@ -459,8 +458,6 @@ bool MeshIO::writeFilePrimProps(
         writer = std::make_unique<ColladaWriter>();
     }else if( fileExtension == "off" ) {
         writer = std::make_unique<OFFWriter>();
-    }else if( fileExtension == "stl" ) {
-        writer = std::make_unique<STLWriter>();
     }else if( fileExtension == "json" ) {
         writer = std::make_unique<JSONWriter>();
     }

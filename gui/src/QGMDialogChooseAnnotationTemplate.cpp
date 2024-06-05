@@ -37,11 +37,32 @@ QGMDialogChooseAnnotationTemplate::QGMDialogChooseAnnotationTemplate(MeshWidget*
     connect(cancelbutton,SIGNAL(clicked()),
             this,SLOT(close()));
     this->setLayout(gridLayout);
+    this->loadAnnotationTemplateIndex();
+}
+
+void QGMDialogChooseAnnotationTemplate::loadAnnotationTemplateIndex(){
+    this->fd=new FileDownloader(QUrl(this->annotemplateindex),this);
+    std::cout << "Loading Index from " << this->annotemplateindex.toStdString() << "\n";
+    connect(fd, SIGNAL (downloaded()), this, SLOT (handleDownloadResultIndex()));
 }
 
 void QGMDialogChooseAnnotationTemplate::checkTemplateURL(){
-    auto* fd=new FileDownloader(QUrl(this->annotationtemplateFromURL->text()),this);
+    this->fd=new FileDownloader(QUrl(this->annotationtemplateFromURL->text()),this);
     connect(fd, SIGNAL (downloaded()), this, SLOT (handleDownloadResult()));
+}
+
+void QGMDialogChooseAnnotationTemplate::handleDownloadResultIndex()
+{
+    QByteArray result=this->fd->downloadedData();
+    QJsonDocument annoDoc;
+    annoDoc=QJsonDocument::fromJson(result);
+    std::cout << "Processing Index Result \n";
+    QJsonArray templatejson=annoDoc.array();
+    for(int i=0;i<templatejson.count();i++){
+        std::cout << "Working through template index " << i << "\n";
+        QJsonObject curobj=templatejson.at(i).toObject();
+        this->chooseAnnotationTemplate->addItem(curobj.find("title")->toString());
+    }
 }
 
 void QGMDialogChooseAnnotationTemplate::handleDownloadResult()
@@ -50,9 +71,14 @@ void QGMDialogChooseAnnotationTemplate::handleDownloadResult()
 
     const AnnotationTemplate &temp = AnnotationTemplate(result);
 
+
 }
 
 void QGMDialogChooseAnnotationTemplate::applyTemplate(){
+
+}
+
+void QGMDialogChooseAnnotationTemplate::applyChanges(){
 
 }
 

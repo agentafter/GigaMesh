@@ -8,7 +8,7 @@
 AnnotationTemplate::AnnotationTemplate(QByteArray data){
     QJsonDocument annoDoc;
     annoDoc=QJsonDocument::fromJson(data);
-    //templatejson=annoDoc.array().at(0).toObject();
+    templatejson=annoDoc.object();
 }
 
 AnnotationTemplate::AnnotationTemplate(QString filepath){
@@ -18,7 +18,7 @@ AnnotationTemplate::AnnotationTemplate(QString filepath){
     QByteArray data = jsonfile.readAll();
     QJsonDocument annoDoc;
     annoDoc=QJsonDocument::fromJson(data);
-    //templatejson=annoDoc.array().at(0).toObject();
+    templatejson=annoDoc.object();
 }
 
 void AnnotationTemplate::importTemplateJSON(QString filepath){
@@ -33,13 +33,43 @@ void AnnotationTemplate::importTemplateJSON(QString filepath){
 }
 
 bool AnnotationTemplate::validityCheck(){
-    for(int i=0;i<this->templatejson.size();i++) {
-        if(!this->templatejson.contains("fields")){
-            return false;
-        }
+    if(!this->templatejson.contains("fields")){
+        return false;
     }
     return true;
 };
+
+QString AnnotationTemplate::toHTML(){
+    QString result="Annotation Template ";
+    if(this->templatejson.contains("name")){
+        result+=this->templatejson.find("name")->toString();
+    }
+    result+="<br/>";
+    if(this->templatejson.contains("fields")){
+        result+="<table><caption>Fields</caption><thead><th>Field Name</th><th>Field Type</th></thead><tbody>";
+        QJsonObject fieldsobj=this->templatejson.find("fields")->toObject();
+        for(const QString& key:fieldsobj.keys()){
+            result+="<tr><td>"+key+"</td>";
+            if(fieldsobj.find(key)->toObject().contains("inputtype")) {
+                result+="<td>"+fieldsobj.find(key)->toObject().find("inputtype")->toString()+"</td>";
+            }
+            result+="</tr>";
+        }
+        result+="</tbody></table>";
+    }
+    if(this->templatejson.contains("tags")){
+        QJsonArray tagarray=this->templatejson.find("tags")->toArray();
+        result+="<table><caption>Tags</caption><thead><th>Tag Name</th><th>TagURI</th></thead><tbody>";
+        for(int i=0;i<tagarray.count();i++){
+            QJsonObject curtag=tagarray.at(i).toObject();
+            if(curtag.contains("label") && curtag.contains("uri")){
+                result+="<tr><td>"+curtag.find("label")->toString()+"</td><td>"+curtag.find("uri")->toString()+"</td></tr>";
+            }
+        }
+        result+="</tbody></table>";
+    }
+    return result;
+}
 
 void AnnotationTemplate::exportTemplateJSON(QString filepath){
     /*for (int i = 0; i < templatejson.count(); i++) {

@@ -22,12 +22,18 @@ class QGMDialogChooseAnnotationTemplate : public QDialog {
     QLabel* annotationtemplateFromURLLabel;
     QMap<QString,QJsonObject> templatelist;
     MeshWidget* themwidget;
+    QString annotemplateindex="https://www.gigamesh.eu/annotemplatesindex.json";
+    public:
+    QGMDialogChooseAnnotationTemplate(MeshWidget* themwidget);
+    public slots:
     void applyTemplate();
     void checkTemplateURL();
     void handleDownloadResult();
+    void handleDownloadResultIndex();
+    void loadAnnotationTemplateIndex();
     void deselectTemplate();
-    public:
-        QGMDialogChooseAnnotationTemplate(MeshWidget* themwidget);
+    void applyChanges();
+
 };
 
 

@@ -297,6 +297,10 @@ bool MeshGL::labelsChanged() {
 		return Mesh::labelsChanged();
 }
 
+QColor* MeshGL::labelIDToColor(u_int64 labelid){
+    return nullptr;
+}
+
 //! Removes OpenGL lists, so that they are regenerated.
 void MeshGL::polyLinesChanged() {
         cout << "[MeshGL::" << __FUNCTION__ << "]" << endl;
