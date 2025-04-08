@@ -2235,7 +2235,7 @@ vector<double> transform(double coordX, double coordY, Vertex v){
 }
 
 double rescale(double X, double A, double B, double C, double D){
-    return ((double(X - A) / (B - A)) * (D - C)) + C;
+    return ((double(X - A) / double(B - A)) * double(D - C)) + C;
 }
 
 
@@ -6948,21 +6948,25 @@ double* Mesh::svgStringTo2DBBOX(std::string svgString,double imgheight,double im
         imgheight=832.0;
         imgwidth=827.0;
     }
-    double minX=DBL_MAX,minY=DBL_MAX,maxX=DBL_MIN,maxY=DBL_MIN;
+    double minX=DBL_MAX,minY=DBL_MAX,maxX=-DBL_MAX,maxY=-DBL_MAX;
     double ylength=this->mMaxY-this->mMinY;
     for (const auto& coord : splitted) {
         try{
             const vector<string> &coordsplit = split(coord, ',');
             double curcoord=stod(coordsplit[0]);
-            curcoord=rescale(curcoord,0,imgwidth,this->mMinX,this->mMaxX);
+            //std::cout<< "Rescale X: ((" << curcoord << "- 0.0 ) / (" << imgwidth << " - 0.0 ))*("<< this->mMaxX << " - " << this->mMinX << ")) + " << this->mMinX;
+            curcoord=rescale(curcoord,0.0,imgwidth,this->mMinX,this->mMaxX);
+            //std::cout << "=" << curcoord << std::endl;
+            //std::cout << "Curcoord" << curcoord << " vs.  maxX " << maxX << std::endl;
             if(curcoord>maxX) {
                 maxX=curcoord;
             }
+            //std::cout << " maxX " << maxX << std::endl;
             if(curcoord<minX) {
                 minX=curcoord;
             }
             curcoord=stod(coordsplit[1]);
-            curcoord=rescale(curcoord,0,imgheight,this->mMinY,this->mMaxY);
+            curcoord=rescale(curcoord,0.0,imgheight,this->mMinY,this->mMaxY);
             if(side=="front"){
                 curcoord=ylength-curcoord;
             }
@@ -6977,6 +6981,7 @@ double* Mesh::svgStringTo2DBBOX(std::string svgString,double imgheight,double im
             cout << e.what() << '\n';
         }
     }
+    //std::cout << "minX " << minX << " maxX " << maxX << " minY " << minY << " maxY " << maxY << std::endl;
     res[0]=minX;
     res[1]=minY;
     res[2]=maxX;

@@ -37,7 +37,11 @@ bool AnnotationTemplate::validityCheck(){
         return false;
     }
     return true;
-};
+}
+
+QJsonObject AnnotationTemplate::getTemplateJSON(){
+    return this->templatejson;
+}
 
 QString AnnotationTemplate::toHTML(){
     QString result="Annotation Template ";

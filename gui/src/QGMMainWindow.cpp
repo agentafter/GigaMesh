@@ -331,6 +331,7 @@ QGMMainWindow::QGMMainWindow( QWidget *parent, Qt::WindowFlags flags )
     QObject::connect( actionCreateAnnotation,      &QAction::triggered, this, &QGMMainWindow::createAnnotation  );
     QObject::connect( actionExport_Annotations,      &QAction::triggered, this, &QGMMainWindow::exportAnnotations);
     QObject::connect(actionLoad_Annotations_From_File, &QAction::triggered, this, &QGMMainWindow::loadAnnotationsFromFile);
+    //QObject::connect(actionShow_annotation_borders_on_hover, &QAction::triggered, this, &QGMMainWindow::loadAnnotationsFromFile);
     QObject::connect(actionChoose_Annotation_Template, &QAction::triggered, this, &QGMMainWindow::chooseAnnotationTemplate);
     QObject::connect(actionColor_Annotations, &QAction::triggered, this, &QGMMainWindow::colorAnnotations);
     QObject::connect(actionEdit_Annotation_Templates, &QAction::triggered, this, &QGMMainWindow::createAnnotationTemplateWindow);
@@ -1989,6 +1990,10 @@ void QGMMainWindow::openAnnotationWindow() {
 
 void QGMMainWindow::exportAnnotations(){
     QGMDialogExportAnnotations(mMeshWidget->getAnnotations(),mMeshWidget->getMesh(),mMeshWidget->getCommonAnnotationFieldNames(),this).exec();
+}
+
+void QGMMainWindow::showAnnotationBorders() {
+    this->mMeshWidget->paintAnnotationBorders=!this->mMeshWidget->paintAnnotationBorders;
 }
 
 void QGMMainWindow::loadAnnotationsFromFile() {

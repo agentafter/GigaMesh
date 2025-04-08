@@ -18,17 +18,27 @@ Annotation::Annotation(QJsonObject annojsonn,QString annoid,MeshQt* mesh,QString
     isempty=false;
     themesh=mesh;
     annojson=annojsonn;
+    double imgheight=0.0;
+    double imgwidth=0.0;
     this->bboxVertices=std::set<Vertex*>();
     if(annojsonn.contains("body")){
         if(annojsonn.find("body")->isObject()){
             annotationbody=QJsonArray();
             annotationbody.append(annojsonn.find("body")->toObject());
+            if(annojsonn.find("body")->toObject().contains("dimensions")){
+                imgwidth=annojsonn.find("body")->toObject().find("dimensions")->toObject().find("x")->toDouble();
+                imgheight=annojsonn.find("body")->toObject().find("dimensions")->toObject().find("y")->toDouble();
+            }
         }else if(annojsonn.find("body")->isArray()){
             annotationbody=annojsonn.find("body")->toArray();
         }
     }
     for(QJsonValue elem:annotationbody){
         fieldnames.insert(elem.toObject().find("purpose").value().toString().toStdString());
+        if((imgheight==0.0 || imgwidth==0.0) && elem.toObject().contains("dimensions")){
+            imgwidth=elem.toObject().find("dimensions")->toObject().find("x")->toDouble();
+            imgheight=elem.toObject().find("dimensions")->toObject().find("y")->toDouble();
+        }
     }
     QJsonObject selectorObject=annojson.find("target")->toObject().find("selector")->toObject();
     QString annotype=selectorObject.find("type")->toString();
@@ -46,10 +56,9 @@ Annotation::Annotation(QJsonObject annojsonn,QString annoid,MeshQt* mesh,QString
         maxZ=res[5];
         bboxToVertexIds(mesh,false,"");
     }else if(annotype=="SvgSelector" || annotype=="SVGSelector"){
+        std::cout << "Annottion ID "<< annotationid << std::endl;
         annovalue=annovalue.replace("<svg><polygon","").replace("points=\"","").replace("\"></polygon></svg>","").trimmed();
-        double imgheight=0.0;
-        double imgwidth=0.0;
-        if(selectorObject.contains("dimensions")){
+        if((imgheight==0.0 || imgwidth==0.0) && selectorObject.contains("dimensions")){
             imgwidth=selectorObject.find("dimensions")->toObject().find("x")->toDouble();
             imgheight=selectorObject.find("dimensions")->toObject().find("y")->toDouble();
         }
@@ -133,7 +142,7 @@ void Annotation::setAnnotationBody(QJsonArray newbody){
 }
 
 void Annotation::getRelativePositions(std::list<Annotation*> otherannotations){
-    std::cout << "GET RELATIVE POSITIONS!!!!! " << endl;
+    //std::cout << "GET RELATIVE POSITIONS!!!!! " << endl;
     auto leftOfMaxX=DBL_MAX, rightOfMinX=DBL_MAX,aboveMinY=DBL_MAX, belowMaxY=DBL_MIN;
     below=new Annotation();
     above=new Annotation();
@@ -142,31 +151,31 @@ void Annotation::getRelativePositions(std::list<Annotation*> otherannotations){
     for(Annotation* oanno:otherannotations){
         if(this->maxX<oanno->minX && !(oanno->maxY < this->minY || oanno->minY > this->maxY)){
             if(oanno->minX<leftOfMaxX){
-                std::cout << "FOUND NEW LEFT OF!!!!!! " << std::to_string(leftOfMaxX) << " "<< this->minX << " " << this->maxX << "\n";
+                //std::cout << "FOUND NEW LEFT OF!!!!!! " << std::to_string(leftOfMaxX) << " "<< this->minX << " " << this->maxX << "\n";
                 if(leftOf->isempty || (!leftOf->isempty && oanno->minX<leftOf->minX)){
                     leftOfMaxX=oanno->minX;
                     leftOf=oanno;
-                    std::cout << "FOUND NEW LEFT OF!!!!!!22222 " << std::to_string(leftOfMaxX) << " "<< this->minX << " " << this->maxX << "\n";
+                    //std::cout << "FOUND NEW LEFT OF!!!!!!22222 " << std::to_string(leftOfMaxX) << " "<< this->minX << " " << this->maxX << "\n";
                 }
             }
         }
         if(this->minX<oanno->maxX && !(oanno->maxX < this->minX || oanno->minX > this->maxX)){
             if(oanno->maxX>rightOfMinX){
-                std::cout << "FOUND NEW RIGHT OF!!!!!!\n";
+                //std::cout << "FOUND NEW RIGHT OF!!!!!!\n";
                 rightOfMinX=oanno->maxX;
                 rightOf=oanno;
             }
         }
         if(this->maxY<oanno->minY && !(oanno->maxX < this->minX || oanno->minX > this->maxX)){
             if(oanno->minY<aboveMinY){
-                std::cout << "FOUND NEW ABOVE OF!!!!!!\n";
+                //std::cout << "FOUND NEW ABOVE OF!!!!!!\n";
                 aboveMinY=oanno->minY;
                 above=oanno;
             }
         }
         if(this->maxY<oanno->minY && !(oanno->maxX < this->minX || oanno->minX > this->maxX)){
             if(oanno->minY>belowMaxY){
-                std::cout << "FOUND NEW BELOW OF!!!!!!\n";
+                //std::cout << "FOUND NEW BELOW OF!!!!!!\n";
                 belowMaxY=oanno->minY;
                 below=oanno;
             }

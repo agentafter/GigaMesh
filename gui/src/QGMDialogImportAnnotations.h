@@ -26,6 +26,7 @@ public:
     QDoubleSpinBox* thicknessEdit;
     QComboBox* annostylecbox;
     QComboBox* annostyletemplatecbox;
+    QComboBox* sideEdit;
 public slots:
     void chooseFile();
     void importAnnotations();

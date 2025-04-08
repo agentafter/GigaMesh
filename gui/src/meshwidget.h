@@ -79,9 +79,9 @@ class MeshQt;
 class MeshWidget : public QGLWidget, public MeshWidgetParams, public MeshGLColors {
     Q_OBJECT
 
+
+
     std::list<Annotation*> annotationlist;
-
-
 
     QJsonObject currentannotationtemplate;
 
@@ -91,9 +91,11 @@ public:
 	// Constructor and Destructor:
 	MeshWidget( const QGLFormat& format, QWidget* parent );
 	~MeshWidget() override;
+    bool paintAnnotationBorders=true;
     QMap<QString,QJsonObject> annotationtemplates;
     std::list<Annotation*> getAnnotations();
     MeshQt *getMesh();
+    void    setAnnotationTemplate(QJsonObject annotemplate);
 	bool    getViewPortResolution( double& rRealWidth, double& rRealHeight ) const;
 	bool    getViewPortPixelWorldSize( double& rPixelWidth, double& rPixelHeight ) const;
 	bool    getViewPortDPI( double& rDPI ) const;

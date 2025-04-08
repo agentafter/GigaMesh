@@ -6365,20 +6365,19 @@ bool MeshWidget::createAnnotationLegend(const QString& attribute, const std::map
     painter.setBrush(QBrush(Qt::black));
     painter.fillRect(QRectF(0,0,w,h),Qt::lightGray);
     painter.setPen(Qt::blue);
-    painter.setFont(QFont( "Courier", 30));
-    painter.drawText(0,0,"Coloring for attribute "+attribute);
-    int curheight=fm.height();
+    painter.setFont(QFont( "Courier", 20));
+    painter.drawText(0,fm.height(),"Coloring for attribute "+attribute);
+    int curheight=fm.height()+fm.height();
     for(auto const& [mapp,color]:mappings) {
         //QRect aRect = QRect( -fm.horizontalAdvance(QString::fromStdString(mapp)), curheight, fm.horizontalAdvance(QString::fromStdString(mapp)), fm.height()*5);
         QRect aRectOffset = QRect( 0, curheight, fm.horizontalAdvance(QString::fromStdString(mapp)), fm.height()*2 );
         painter.fillRect(QRect(aRectOffset),Qt::lightGray);
         painter.setPen(color);
-        painter.setFont(QFont( "Courier", 30));
+        painter.setFont(QFont( "Courier", 20));
         painter.drawText(0,curheight,QString::fromStdString(mapp + "\n"));
         std::cout << "Drawing text: " << mapp << " in color " << color << " at curheight " << curheight << " and curwidth " << "-20" << "\n";
         curheight+=fm.height();
     }
-
     std::cout << "Draw Raster image " << w << " " << h << "\n";
     initializeTextureMap( TEXMAP_ANNOLEGEND, this->annolegendimage );
     paintRasterImage( TEXMAP_ANNOLEGEND, -5, -5, w, h);
@@ -6941,6 +6940,10 @@ bool MeshWidget::openEditAnnotationDialog(){
     return true;
 }
 
+void MeshWidget::setAnnotationTemplate(QJsonObject annotemplate){
+    this->currentannotationtemplate=annotemplate;
+}
+
 bool MeshWidget::exportAnnotationAsMesh(){
     QString fileName = QFileDialog::getSaveFileName(this, "Save File", "/home/", "Text Files (*.ply);;All Files (*.*)");
     if (!fileName.isEmpty()) {
@@ -7070,20 +7073,24 @@ void MeshWidget::mouseMoveEvent( QMouseEvent* rEvent ) {
             Annotation* foundanno=nullptr;
             for (Annotation* anno: annotationlist) {
                 if (anno->pointInAnnotationBBOX3D(clickPos.getX(), ylength-clickPos.getY(), clickPos.getZ())) {
-                    if(anno->leftOf!=nullptr && !anno->leftOf->isempty){
-                        QToolTip::showText(rEvent->globalPos(),/*QString::fromStdString(anno->leftOf->toHTML())+" "+*/QString::fromStdString(anno->toHTML()));
+                    /*if(anno->leftOf!=nullptr && !anno->leftOf->isempty){
+                        QToolTip::showText(rEvent->globalPos(),QString::fromStdString(anno->leftOf->toHTML())+" "+QString::fromStdString(anno->toHTML()));
                     }else{
-                        QToolTip::showText(rEvent->globalPos(), /*"No Left Of "+*/QString::fromStdString(anno->toHTML()));
+                        QToolTip::showText(rEvent->globalPos(), "No Left Of "+QString::fromStdString(anno->toHTML()));
+                    }*/
+                    //std::cout << "BBOX Vertices: " << std::to_string(anno->bboxVertices.size()) << "All Vertices: " << std::to_string(anno->vertices.size()) << endl;
+                    if(this->paintAnnotationBorders) {
+                        this->getMesh()->selectVertices(anno->bboxVertices, 2.0);
                     }
-                    std::cout << "BBOX Vertices: " << std::to_string(anno->bboxVertices.size()) << "All Vertices: " << std::to_string(anno->vertices.size()) << endl;
-                    this->getMesh()->selectVertices(anno->bboxVertices, 2.0);
                     mLastAnnotation = anno;
                     foundanno=anno;
                     break;
                 }
             }
             if(!mLastAnnotation->isempty && foundanno==nullptr){
-                this->getMesh()->removeFromSelection(mLastAnnotation->vertices);
+                if(this->paintAnnotationBorders) {
+                    this->getMesh()->removeFromSelection(mLastAnnotation->vertices);
+                }
                 QToolTip::hideText();
                 mLastAnnotation->isempty=true;
             }

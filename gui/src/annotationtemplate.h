@@ -23,6 +23,7 @@ class AnnotationTemplate {
     void addTextField(QString name,QString type);
 
 public:
+    QJsonObject getTemplateJSON();
     AnnotationTemplate(QByteArray data);
     AnnotationTemplate(QString filepath);
 };

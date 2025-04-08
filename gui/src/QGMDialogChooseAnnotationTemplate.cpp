@@ -20,7 +20,7 @@ QGMDialogChooseAnnotationTemplate::QGMDialogChooseAnnotationTemplate(MeshWidget*
     gridLayout->addWidget(this->chooseAnnotationTemplate,0,1,1,2);
     this->annotationtemplateFromURLLabel=new QLabel("Annotation Template from URL:",this);
     this->annotationtemplateFromURL=new QLineEdit(this);
-    auto* checkTemplateURL=new QPushButton();
+    auto* checkTemplateURL=new QPushButton("...");
     gridLayout->addWidget(annotationtemplateFromURLLabel,1,0);
     gridLayout->addWidget(annotationtemplateFromURL,1,1);
     gridLayout->addWidget(checkTemplateURL,1,2);
@@ -46,6 +46,12 @@ void QGMDialogChooseAnnotationTemplate::loadAnnotationTemplateIndex(){
     connect(fd, SIGNAL (downloaded()), this, SLOT (handleDownloadResultIndex()));
 }
 
+/*void QGMDialogChooseAnnotationTemplate::loadAnnotationTemplateFromFile(QString filename){
+    this->fd=new FileDownloader(QUrl(this->annotationtemplateFromURL->text()),this);
+    connect(fd, SIGNAL (downloaded()), this, SLOT (handleDownloadResult()));
+}*/
+
+
 void QGMDialogChooseAnnotationTemplate::checkTemplateURL(){
     this->fd=new FileDownloader(QUrl(this->annotationtemplateFromURL->text()),this);
     connect(fd, SIGNAL (downloaded()), this, SLOT (handleDownloadResult()));
@@ -68,18 +74,17 @@ void QGMDialogChooseAnnotationTemplate::handleDownloadResultIndex()
 void QGMDialogChooseAnnotationTemplate::handleDownloadResult()
 {
     QByteArray result=this->fd->downloadedData();
-
-    const AnnotationTemplate &temp = AnnotationTemplate(result);
-
-
+    auto temp = AnnotationTemplate(result);
+    this->curtemplate=temp.getTemplateJSON();
+    int decision=QMessageBox::question(this,"Template Downloaded","The annotation template has been downloaded\nDo you want to apply it?",QMessageBox::Yes|QMessageBox::No);
+    if(decision==16384){
+        applyTemplate();
+        this->close();
+    }
 }
 
 void QGMDialogChooseAnnotationTemplate::applyTemplate(){
-
-}
-
-void QGMDialogChooseAnnotationTemplate::applyChanges(){
-
+    this->themwidget->setAnnotationTemplate(this->curtemplate);
 }
 
 void QGMDialogChooseAnnotationTemplate::deselectTemplate(){

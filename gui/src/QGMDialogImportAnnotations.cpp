@@ -62,6 +62,19 @@ QGMDialogImportAnnotations::QGMDialogImportAnnotations(MeshWidget* mMeshWidget,Q
             this,SLOT(chooseFile()));
     gridLayout->addWidget(searchFile,linecounter,2);
     linecounter+=1;
+    auto* sideLabel=new QLabel();
+    sideLabel->setText("Annotation File Contained Side:");
+    gridLayout->addWidget(sideLabel,linecounter,0);
+    this->sideEdit=new QComboBox();
+    sideEdit->addItem("n/a");
+    sideEdit->addItem("front");
+    sideEdit->addItem("back");
+    sideEdit->addItem("left");
+    sideEdit->addItem("right");
+    sideEdit->addItem("top");
+    sideEdit->addItem("bottom");
+    gridLayout->addWidget(sideEdit,linecounter,1);
+    linecounter+=1;
     auto * okbutton=new QPushButton(this);
     okbutton->setText("Ok");
     gridLayout->addWidget(okbutton,linecounter,1);
@@ -81,8 +94,12 @@ void QGMDialogImportAnnotations::importAnnotations(){
     QString filename = this->filepath->text();
     this->close();
     int side=0;
+    QString sideval=this->sideEdit->currentText();
     QString sidestr="noside";
-    std::cout << filename.toStdString() << endl;
+    if(sideval!="n/a"){
+        sidestr=sideval;
+    }
+    std::cout << filename.toStdString() << std::endl;
     if (!filename.isNull()) {
         if (filename.contains("front")) {
             side = 3;
@@ -125,21 +142,21 @@ void QGMDialogImportAnnotations::importAnnotations(){
             border=true;
             borderOnly=false;
         }
-        std::cout << "Accessing meshwidget" << endl;
+        //std::cout << "Accessing meshwidget" << std::endl;
         if (!meshwidget->getMesh()->annotationsLoaded) {
             meshwidget->getMesh()->labelVerticesNone();
             meshwidget->getMesh()->labelVerticesBackground();
         }
         QColor annocolor=annocolorButton->getColor();
         QColor annobordercolor=annobordercolorButton->getColor();
-        std::cout << "Creating annos" << endl;
+        std::cout << "Creating annos" << std::endl;
         for (int i = 0; i < mainObject.size(); ++i) {//mainObject.size();
             QJsonObject curannojson = mainObject.find(thekeys.at(i))->toObject();
             QString annotype = curannojson.find("target")->toObject().find("selector")->toObject().find(
                     "type")->toString();
-            std::cout << "Creating first anno" << endl;
+            std::cout << "Creating first anno" << std::endl;
             Annotation* curanno = new Annotation(curannojson, thekeys.at(i), meshwidget->getMesh(), sidestr);
-            std::cout << "CurAnno created " << endl;
+            std::cout << "CurAnno created " << std::endl;
             if (annotype == "WKTSelector" || annotype == "WktSelector") {
                 meshwidget->getMesh()->labelVerticesInBBOX(curanno->minX, curanno->maxX, curanno->minY, curanno->maxY,
                                                             curanno->minZ, curanno->maxZ, 2.0, border,borderOnly,annocolor,annobordercolor,thicknessEdit->value());
@@ -152,7 +169,7 @@ void QGMDialogImportAnnotations::importAnnotations(){
         }
         meshwidget->calculateRelativeAnnotationPositions();
         meshwidget->getMesh()->annotationsLoaded = true;
-        std::cout << annotationlist.size() << endl;
+        std::cout << annotationlist.size() << std::endl;
         jsonfile.close();
     }
 

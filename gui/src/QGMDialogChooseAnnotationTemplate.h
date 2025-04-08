@@ -17,12 +17,14 @@
 class QGMDialogChooseAnnotationTemplate : public QDialog {
     Q_OBJECT
     FileDownloader* fd;
+    QJsonObject curtemplate;
     QComboBox* chooseAnnotationTemplate;
     QLineEdit* annotationtemplateFromURL;
     QLabel* annotationtemplateFromURLLabel;
     QMap<QString,QJsonObject> templatelist;
     MeshWidget* themwidget;
     QString annotemplateindex="https://www.gigamesh.eu/annotemplatesindex.json";
+    QString annotemplaterepository="https://www.gigamesh.eu/annotemplatesall.json";
     public:
     QGMDialogChooseAnnotationTemplate(MeshWidget* themwidget);
     public slots:
@@ -32,7 +34,6 @@ class QGMDialogChooseAnnotationTemplate : public QDialog {
     void handleDownloadResultIndex();
     void loadAnnotationTemplateIndex();
     void deselectTemplate();
-    void applyChanges();
 
 };
 

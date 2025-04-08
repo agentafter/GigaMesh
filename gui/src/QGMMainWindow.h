@@ -100,6 +100,7 @@ public slots:
 	void load(const QString& rFileName );
 	bool loadLast();
     void loadAnnotationsFromFile();
+    void showAnnotationBorders();
     void colorAnnotations();
     void exportAnnotations();
     void createAnnotation();
