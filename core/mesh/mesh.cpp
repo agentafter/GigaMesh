@@ -15351,7 +15351,7 @@ bool Mesh::exportFuncVals( filesystem::path rFileName, bool rWithVertIdx ) {
 
 	if(rFileName.extension().empty())
 	{
-		rFileName += ".pline";
+		rFileName += ".txt";
 	}
 
 	filestr.open( rFileName, fstream::out );
@@ -15372,7 +15372,7 @@ bool Mesh::exportFuncVals( filesystem::path rFileName, bool rWithVertIdx ) {
 
 	std::stringstream strHeader;
 	strHeader << "# +-------------------------------------------------------------------------------+" << std::endl;
-	strHeader << "# | PLINE file with polylines computed by the GigaMesh Software Framework         |" << std::endl;
+	strHeader << "# | Txt file with function values computed by the GigaMesh Software Framework     |" << std::endl;
 	strHeader << "# +-------------------------------------------------------------------------------+" << std::endl;
 	strHeader << "# | WebSite: https://gigamesh.eu                                                  |" << std::endl;
 	strHeader << "# | EMail:   info@gigamesh.eu                                                     |" << std::endl;
