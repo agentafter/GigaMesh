@@ -5,6 +5,8 @@
 
 #include <QWidget>
 #include <QColorDialog>
+#include <QFileDialog>
+#include <iostream>
 #include "QGMDialogImportAnnotations.h"
 #include "ColorSelectorButton.h"
 
@@ -131,7 +133,7 @@ void QGMDialogImportAnnotations::importAnnotations(){
         QJsonObject mainObject = annoDoc.object();
         QStringList thekeys = mainObject.keys();
         std::list<Annotation*> annotationlist;
-        std::cout << "Getting border parameters" << endl;
+        std::cout << "Getting border parameters" << std::endl;
         bool borderOnly=false;
         bool border=true;
         if(this->annostylecbox->currentText().contains("Border Only")){

@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QGridLayout>
 #include <QJsonDocument>
+#include <QFileDialog>
 
 
 QGMDialogExportAnnotations::QGMDialogExportAnnotations(std::list<Annotation*> annotations,MeshQt* themesh,std::set<std::string> fieldnames,QWidget *parent){

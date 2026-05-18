@@ -21,6 +21,7 @@
 //
 #include "automaticalignmentpyinterface.h"
 #include <QString>
+#include <QRegularExpression>
 #include <QFile>
 #include <QTemporaryFile>
 #include <QProcess>
@@ -245,7 +246,7 @@ bool AutomaticAlignmentPyInterface::readPCsFromCSV(QString importPath, Matrix4D 
 
     //read data from CSV
     //-------------------------------------------------
-    const QRegExp matchDelimitersRegex(",");
+    const QRegularExpression matchDelimitersRegex(",");
     std::vector<std::pair<int, std::array<double, 4>>> indexPrincipalComponentsMatrix;
     QStringList matrixRowStringList;
     QByteArray lineBuffer;

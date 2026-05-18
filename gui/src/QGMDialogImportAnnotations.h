@@ -4,10 +4,12 @@
 
 #ifndef GIGAMESH_QGMDIALOGIMPORTANNOTATIONS_H
 #define GIGAMESH_QGMDIALOGIMPORTANNOTATIONS_H
-#include <QtGui>
 #include <QDialog>
 #include <QGridLayout>
 #include <QListWidget>
+#include <QDoubleSpinBox>
+#include <QComboBox>
+#include <QLineEdit>
 
 #include "QGMMacros.h"
 #include "annotation.h"

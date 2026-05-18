@@ -34,11 +34,7 @@
 #include <QDialog>
 #include <qstring.h>
 
-// OpenGL stuff
-#define GL_GLEXT_PROTOTYPES
-#if QT_VERSION >= 0x050000
 #include <QMessageBox>
-#endif
 
 // Qt Interface includes:
 #include "ui_dialogPlaneParam.h"

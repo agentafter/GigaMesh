@@ -1245,18 +1245,13 @@ void QGMMainWindow::initMeshSignals() {
 }
 
 //! Add and initalize the mMeshWidget
-bool QGMMainWindow::setupMeshWidget( const QGLFormat& rGLFormat ) {
+bool QGMMainWindow::setupMeshWidget( const QSurfaceFormat& rGLFormat ) {
 	cout << "[QGMMainWindow::" << __FUNCTION__ << "] Start ..." << endl;
 	// Initialize the widget for display of the Mesh using OpenGL - AFTER connecting the menu's actions!
 	mMeshWidget = new MeshWidget( rGLFormat, static_cast<QWidget*>( this ) );
-	//mMeshWidget->setVisible( false );
 	setCentralWidget( mMeshWidget );
-	//verticalLayoutMain->addWidget( mMeshWidget );
 	mMeshWidget->setFocus();
 	mMeshWidget->makeCurrent();
-	//mMeshWidget->show();
-	//mMeshWidget->qglClearColor( Qt::red );
-
 
     if(!((rGLFormat.majorVersion() >= 4) || (rGLFormat.majorVersion() == 4 && rGLFormat.minorVersion() < 3)))
     {
@@ -1306,7 +1301,8 @@ void QGMMainWindow::load() {
 	QString fileName = QFileDialog::getOpenFileName( this,
 													 tr( "Open 3D-Mesh or Point Cloud" ),
 	                                                 settings.value( "lastPath" ).toString(),
-													 tr( "3D mesh files (*.ply *.PLY *.obj *.OBJ);;Other 3D files (*.txt *.TXT *.xyz *.XYZ)" )
+													 tr( "3D mesh files (*.ply *.PLY *.obj *.OBJ);;Other 3D files (*.txt *.TXT *.xyz *.XYZ)" ),
+	                                                 nullptr, QFileDialog::DontUseNativeDialog
 	                                                );
 	if( fileName.size() > 0 ) {
 		emit sFileOpen( fileName );
@@ -1364,7 +1360,8 @@ void QGMMainWindow::menuImportFunctionValues() {
 	QString fileNames = QFileDialog::getOpenFileName( this,
 													  tr( "Import Function Values (per Vertex)" ),
 	                                                  settings.value( "lastPath" ).toString(),
-													  tr( "ASCII Text (*.mat *.txt)" )
+													  tr( "ASCII Text (*.mat *.txt)" ),
+	                                                  nullptr, QFileDialog::DontUseNativeDialog
 	                                                 );
 	if( fileNames.size() > 0 ) {
         emit sFileImportFunctionValues( fileNames );
@@ -1378,7 +1375,8 @@ void QGMMainWindow::menuImportPolylines() {
     QString fileNames = QFileDialog::getOpenFileName( this,
                                                       tr( "Import Polylines)" ),
                                                       settings.value( "lastPath" ).toString(),
-                                                      tr( "ASCII Polyline (*.pline)" )
+                                                      tr( "ASCII Polyline (*.pline)" ),
+                                                      nullptr, QFileDialog::DontUseNativeDialog
                                                      );
     if( fileNames.size() > 0 ) {
         emit sFileImportPolylines( fileNames );
@@ -1392,7 +1390,8 @@ void QGMMainWindow::menuImportTransMat() {
     QString fileNames = QFileDialog::getOpenFileName( this,
                                                       tr( "Import Transformation matrices" ),
                                                       settings.value( "lastPath" ).toString(),
-                                                      tr( "ASCII Text (*.txt)" )
+                                                      tr( "ASCII Text (*.txt)" ),
+                                                      nullptr, QFileDialog::DontUseNativeDialog
                                                      );
     if( fileNames.size() > 0 ) {
         emit sFileImportTransMat( fileNames );
@@ -1406,7 +1405,8 @@ void QGMMainWindow::menuImportLabels() {
     QString fileNames = QFileDialog::getOpenFileName( this,
                                                       tr( "Import Labels (per Vertex)" ),
                                                       settings.value( "lastPath" ).toString(),
-                                                      tr( "ASCII Text (*.mat *.txt)" )
+                                                      tr( "ASCII Text (*.mat *.txt)" ),
+                                                      nullptr, QFileDialog::DontUseNativeDialog
                                                      );
     if( fileNames.size() > 0 ) {
         emit sFileImportLabels( fileNames );
@@ -1420,7 +1420,8 @@ void QGMMainWindow::menuImportTexMap() {
 	QString fileNames = QFileDialog::getOpenFileName( this,
 													  tr( "Import Texture Map (Color per Vertex)" ),
 	                                                  settings.value( "lastPath" ).toString(),
-													  tr( "Texture maps (*.tex)" )
+													  tr( "Texture maps (*.tex)" ),
+	                                                  nullptr, QFileDialog::DontUseNativeDialog
 	                                                 );
 	if( fileNames.size() > 0 ) {
 		emit sFileImportTexMap( fileNames );
@@ -1434,7 +1435,8 @@ void QGMMainWindow::menuImportFeatureVectors() {
 	QString fileName = QFileDialog::getOpenFileName( this,
 													 tr( "Import Feature Vectors (Vertices)" ),
 	                                                 settings.value( "lastPath" ).toString(),
-													 tr( "Feature vectors (*.mat *.txt)" )
+													 tr( "Feature vectors (*.mat *.txt)" ),
+	                                                 nullptr, QFileDialog::DontUseNativeDialog
 	                                                );
 	if( fileName.length() > 0 ) {
 		emit sFileImportFeatureVectors( fileName );
@@ -1448,7 +1450,8 @@ void QGMMainWindow::menuImportNormalVectors() {
 	QString fileName = QFileDialog::getOpenFileName( this,
 													 tr( "Import Normal Vectors (Vertices)" ),
 	                                                 settings.value( "lastPath" ).toString(),
-													 tr( "Normal vectors (*.mat *.txt)" )
+													 tr( "Normal vectors (*.mat *.txt)" ),
+	                                                 nullptr, QFileDialog::DontUseNativeDialog
 	                                                );
 	if( fileName.length() > 0 ) {
 		emit sFileImportNormals( fileName );
@@ -2279,10 +2282,9 @@ void QGMMainWindow::fileChanged(
 	settings.endArray();
 	QString fullName = rFileNameFull;
 	fullName.replace( "//", "/" );
-	QRegExp fullNameExact( fullName, Qt::CaseSensitive, QRegExp::FixedString );
 	int isInListAt;
 	do {
-		isInListAt = recentFiles.indexOf( fullNameExact );
+		isInListAt = recentFiles.indexOf( fullName );
 		if( isInListAt >= 0 ) {
 			recentFiles.removeAt( isInListAt );
 		}

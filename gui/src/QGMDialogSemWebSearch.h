@@ -5,10 +5,15 @@
 #ifndef GIGAMESH_QGMDIALOGSEMWEBSEARCH_H
 #define GIGAMESH_QGMDIALOGSEMWEBSEARCH_H
 
-#include <QtGui>
 #include <QDialog>
 #include <QGridLayout>
 #include <QListWidget>
+#include <QListView>
+#include <QLineEdit>
+#include <QComboBox>
+#include <QLabel>
+#include <QIcon>
+#include <QRadioButton>
 
 #include "QGMMacros.h"
 #include "meshwidget.h"

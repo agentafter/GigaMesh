@@ -4,12 +4,14 @@
 
 #include "QGMDialogAnnotation.h"
 #include "CompleterDelegate.h"
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 #include "annotation.h"
 #include <iostream>
 #include <ostream>
 #include <QUrl>
 #include <QFileDialog>
-#include <QtSvg/QSvgWidget>
+#include <QtSvgWidgets/QSvgWidget>
 #include <QVBoxLayout>
 #include <QtWidgets>
 #include <QDialog>
@@ -33,8 +35,8 @@ QGMDialogAnnotation::QGMDialogAnnotation(QJsonObject annotemplate, Annotation* a
     auto * titlelabel=new QLabel(this);
     QString firstkey=QString::fromStdString(annodata->annotationid);
     curanno=annodata->annotationbody;
-    qDebug()<<curanno << endl;
-    std::cout << "Annotationbody Array Length: " << curanno.size() << endl;
+    qDebug()<<curanno;
+    std::cout << "Annotationbody Array Length: " << curanno.size() << std::endl;
     titlelabel->setText("Edit Annotation "+firstkey);
     gridLayout->addWidget(titlelabel,0,0,1,2);
     tabw=new QTabWidget(this);
@@ -99,7 +101,7 @@ QGMDialogAnnotation::QGMDialogAnnotation(QJsonObject annotemplate, Annotation* a
 }
 
 void QGMDialogAnnotation::applyChanges(){
-    std::cout << "Apply Changes" << endl;
+    std::cout << "Apply Changes" << std::endl;
     this->saveAnnotationJSON();
     //this->annodata->setAnnotationBody(result);
     this->close();
@@ -250,20 +252,18 @@ QJsonObject QGMDialogAnnotation::saveAnnotationJSON(){
             }
         }*/
     }
-    std::cout << "SAVE ANNOTATION: "<<std::to_string(body.count()) << endl;
+    std::cout << "SAVE ANNOTATION: "<<std::to_string(body.count()) << std::endl;
     this->curanno=body;
     return result;
 }
 
 void QGMDialogAnnotation::createInputFieldByType(const QString& inputtype, int linecounter, const QString& key, QGridLayout* gridLayout, QWidget* curwidget, const QJsonObject& data, bool hasdata, QJsonArray curanno){
-    QRegExp numberregex("\b[0-9]+\b");
-    numberregex.setCaseSensitivity(Qt::CaseInsensitive);
-    numberregex.setPatternSyntax(QRegExp::RegExp);
+    QRegularExpression numberregex("\\b[0-9]+\\b");
     QHash<QString,QString> valmap=getValuesFromAnnotation(curanno);
     auto * label = new QLabel(curwidget);
     label->setText(key+":");
     if(inputtype=="text" || inputtype=="number"){
-        QRegExpValidator regValidator( numberregex, 0 );
+        QRegularExpressionValidator regValidator( numberregex, 0 );
         this->inputmap.append("QLineEdit");
         auto * edit =new QLineEdit(curwidget);
         if(valmap.contains(key)){
@@ -299,7 +299,7 @@ void QGMDialogAnnotation::createInputFieldByType(const QString& inputtype, int l
         gridLayout->addWidget(cbox,linecounter,1);
     }else if(inputtype=="paleocodage"){
         this->inputmap.append("QLineEdit");
-        QRegExpValidator regValidator( numberregex, 0 );
+        QRegularExpressionValidator regValidator( numberregex, 0 );
         auto * edit =new QLineEdit(curwidget);
         if(valmap.contains(key)){
             edit->setText(valmap.value(key));

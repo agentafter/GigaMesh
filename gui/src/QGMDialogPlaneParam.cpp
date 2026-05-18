@@ -21,6 +21,7 @@
 //
 
 #include "QGMDialogPlaneParam.h"
+#include <QRegularExpression>
 
 using namespace std;
 
@@ -40,9 +41,9 @@ QGMDialogPlaneParam::QGMDialogPlaneParam( QWidget *parent, Qt::WindowFlags flags
 bool QGMDialogPlaneParam::setPlaneHNF( Vector3D rPlaneHNF ) {
 	QClipboard *clipboard = QApplication::clipboard();
 	QString clipBoardStr = clipboard->text( QClipboard::Clipboard );
-	if( clipBoardStr.contains( QRegExp( "^GigaMesh HNF .*$" ) ) ) {
+	if( clipBoardStr.contains( QRegularExpression( "^GigaMesh HNF .*$" ) ) ) {
 		clipBoardStr.remove( 0, 13 );
-        QStringList someTokens  = clipBoardStr.split( " ", QString::SkipEmptyParts );
+        QStringList someTokens  = clipBoardStr.split( " ", Qt::SkipEmptyParts );
 		if( someTokens.count() == 4 ) {
 			bool useClipboard;
 			bool userCancel;

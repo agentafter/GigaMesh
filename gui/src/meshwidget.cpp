@@ -26,6 +26,7 @@
 // generic Qt includes:
 #include <QFileDialog>
 #include <QQuaternion>
+#include <QToolTip>
 
 // Qt includes:
 #include "QGMDialogEnterText.h"
@@ -67,16 +68,16 @@ using PglBindVertexArray = void (*)(GLuint);
 	mVAO( _NOT_A_NUMBER_UINT_ )
 
 //! Constructor.
-MeshWidget::MeshWidget( const QGLFormat &format, QWidget *parent )
-    : QGLWidget( format, parent ), MESHWIDGETINITDEFAULTS {
+MeshWidget::MeshWidget( const QSurfaceFormat &format, QWidget *parent )
+    : QOpenGLWidget( parent ), MESHWIDGETINITDEFAULTS {
 #ifdef DEBUG_SHOW_ALL_METHOD_CALLS
 	cout << "[MeshWidget::" << __FUNCTION__ << "]" << endl;
 #endif
+	setFormat( format );
 	// now we can use the keyboard to navigate:
 	setFocusPolicy( Qt::StrongFocus );
     setContextMenuPolicy(Qt::CustomContextMenu);
 	setAutoFillBackground( false );
-	setAutoBufferSwap( false ); // to preven flickering in ::paintEvent when QPainter.end is called!
     initializeDefaultAnnotationTemplate();
 	// Store pointer to the main window.
 	mMainWindow = static_cast<QGMMainWindow*>(parent);
@@ -906,6 +907,11 @@ bool MeshWidget::fileOpen( const QString& fileName ) {
 
 	//emit statusMessage( "Loading Mesh from " + fileName );
 	if( mMeshVisual != nullptr ) {
+		// After screenshotSingle(), DEFAULT_FRAMEBUFFER_ID still holds the now-deleted
+		// screenshot FBO ID. Reset it to the valid widget FBO before the destructor's
+		// transparencyDeleteFBO() / releaseFramebuffersNPR() try to bind it.
+		mMeshVisual->setParamIntMeshGL( MeshGLParams::DEFAULT_FRAMEBUFFER_ID,
+		                                static_cast<int>( defaultFramebufferObject() ) );
 		// remove mesh, when one is present:
 		delete mMeshVisual;
 		mMeshVisual = nullptr;
@@ -990,11 +996,10 @@ bool MeshWidget::fileOpen( const QString& fileName ) {
 	setParamIntegerMeshWidget( MeshWidgetParams::SELECTION_MODE, MeshWidgetParams::SELECTION_MODE_VERTEX );
 
 	// Update OpenGL context to default view
-	qglClearColor( Qt::white );
+	glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
 	defaultViewLightZoom();
 
-	//should be valid for QGLContext and QGL* classes. If upgraded to QOpenGLContext, then use context()->defaultFramebufferObject() instead of 0
-	mMeshVisual->setParamIntMeshGL(MeshGLParams::DEFAULT_FRAMEBUFFER_ID, 0);
+	mMeshVisual->setParamIntMeshGL(MeshGLParams::DEFAULT_FRAMEBUFFER_ID, defaultFramebufferObject());
 
 	// Initialize Pin size depending on the bounding box diagonal
 	Vector3D boundingbox;
@@ -1094,7 +1099,8 @@ void MeshWidget::saveStillImages360( Vector3D rotCenter, Vector3D rotAxis ) {
 
     QString filePath = QString::fromStdWString( mMeshVisual->getFileLocation().wstring() );
 	QString savePath = QFileDialog::getExistingDirectory(mMainWindow, tr( "Folder for image stack" ),
-													 filePath);
+													 filePath,
+													 QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
 
 	if(savePath.length() == 0)
 	{
@@ -1794,7 +1800,7 @@ void MeshWidget::unloadMesh() {
 		// remove mesh, when one is present:
 		delete mMeshVisual;
 		mMeshVisual = nullptr;
-		qglClearColor( Qt::gray );
+		glClearColor( 0.5f, 0.5f, 0.5f, 1.0f );
 		setView();
 		update();
 	}
@@ -1817,13 +1823,10 @@ void MeshWidget::initializeGL() {
 	cout << "[MeshWidget::" << __FUNCTION__ << "]                     GLSL VERSION: " << reinterpret_cast<const char*>(glGetString( GL_SHADING_LANGUAGE_VERSION )) << endl;
 	cout << "[MeshWidget::" << __FUNCTION__ << "] -----------------------------------------------------------" << endl;
 
-	QGLFormat glFormat = QGLWidget::format();
-	if( !glFormat.sampleBuffers() ) {
-		cerr << "[MeshWidget::" << __FUNCTION__ << "] ERROR: Could not enable sample buffers!" << endl;
+	if( format().samples() < 2 ) {
+		cerr << "[MeshWidget::" << __FUNCTION__ << "] WARNING: Multisampling not enabled or sample count is low!" << endl;
 	}
-
-	//setFormat( QGLFormat( QGL::DoubleBuffer | QGL::DepthBuffer ) ); // was in fileOpen and caused a addtional calls to initializeGL - maybe not necessary at all.
-	qglClearColor( Qt::white );
+	glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
 	PRINT_OPENGL_ERROR( "qglClearColor( Qt::white )" );
 
 	//! \todo Source revision for OpenGL initaliation.
@@ -2012,7 +2015,9 @@ bool MeshWidget::screenshotViewsDirectoryFiles(
                 QStringList&   rCurrFiles        //!< List of files.
 ) {
 	QString pathChoosen = QFileDialog::getExistingDirectory( mMainWindow,
-	                                                         tr( "Choose the Directory" ) );
+	                                                         tr( "Choose the Directory" ),
+	                                                         QString(),
+	                                                         QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog );
 
 	if( pathChoosen.isEmpty() ) { // User cancel.
 		std::cout << "[MeshWidget::" << __FUNCTION__ << "] User canceled!" << std::endl;
@@ -2092,7 +2097,7 @@ bool MeshWidget::checkUserdefinedLatexFile(QString *latexTemplate, std::vector<L
     bool notUsedPlaceholderFound = false;
     QString informationTextPlaceholders;
     for(LatexPlaceholder placeholder: rPlaceHolders){
-        if(!latexTemplate->contains(QRegExp(placeholder.placeholder))){
+        if(!latexTemplate->contains(placeholder.placeholder)){
             informationTextPlaceholders = informationTextPlaceholders + placeholder.placeholder;
             informationTextPlaceholders = informationTextPlaceholders + QString(" | ");
             informationTextPlaceholders = informationTextPlaceholders + placeholder.descr +  QString("\n");
@@ -2224,10 +2229,11 @@ bool MeshWidget::screenshotViewsDirectory() {
         }
         //load user individual template
         if( rTemplate == "Own template"){
-            texFileName = QFileDialog::getOpenFileName( this,
+            texFileName = QFileDialog::getOpenFileName( mMainWindow,
                                                               tr( "Import Latex template" ),
                                                               nullptr,
-                                                              tr( "tex-file (*.tex)" )
+                                                              tr( "tex-file (*.tex)" ),
+                                                              nullptr, QFileDialog::DontUseNativeDialog
                                                              );
             if( texFileName == nullptr) {
                 return( false );
@@ -2457,10 +2463,11 @@ bool MeshWidget::screenshotViewsPDFUser() {
     QString texFileName;
     if( rTemplate == "Own template"){
 
-        texFileName = QFileDialog::getOpenFileName( this,
+        texFileName = QFileDialog::getOpenFileName( mMainWindow,
                                                           tr( "Import Latex template" ),
                                                           nullptr,
-                                                          tr( "tex-file (*.tex)" )
+                                                          tr( "tex-file (*.tex)" ),
+                                                          nullptr, QFileDialog::DontUseNativeDialog
                                                          );
         if( texFileName == nullptr) {
             return( false );
@@ -2620,12 +2627,12 @@ bool MeshWidget::screenshotViewsPDF( const QString& rFileName, QString rTemplate
 	}
 
     //replace license placeholders
-    latexTemplate.replace( QRegExp( "__CC_PARAMETERS__" ), rCCparameter );
-    latexTemplate.replace( QRegExp( "__CC_VERSION__" ), rCCversion );
+    latexTemplate.replace( "__CC_PARAMETERS__", rCCparameter );
+    latexTemplate.replace( "__CC_VERSION__", rCCversion );
 
-	latexTemplate.replace( QRegExp( "__FIGURE_PREFIX__" ), filePrefixImgTex );
-	latexTemplate.replace( QRegExp( "__SCALE_FACTOR_STRING__" ), scaleFactorTex );
-	latexTemplate.replace( QRegExp( "__SCALE_FACTOR__" ), QString( "%1" ).arg( scaleFactor, 'f' ).trimmed() );
+	latexTemplate.replace( "__FIGURE_PREFIX__", filePrefixImgTex );
+	latexTemplate.replace( "__SCALE_FACTOR_STRING__", scaleFactorTex );
+	latexTemplate.replace( "__SCALE_FACTOR__", QString( "%1" ).arg( scaleFactor, 'f' ).trimmed() );
 	for( pair<string, string>& replacmentString : replacmentStrings ) {
 		string placeHolder = replacmentString.first;
 		string content = replacmentString.second;
@@ -3085,14 +3092,16 @@ bool MeshWidget::screenshotSingle( const QString&   rFileName,   //!< Filename t
 	bool ret = false;
 
 	{
-		OffscreenBuffer offscreenBuffer(context());
-		int defaultFramebuffer;
-		mMeshVisual->getParamIntMeshGL(MeshGLParams::DEFAULT_FRAMEBUFFER_ID, &defaultFramebuffer);
-		mMeshVisual->setParamIntMeshGL(MeshGLParams::DEFAULT_FRAMEBUFFER_ID, offscreenBuffer.getFboID());
-		repaint();
+		// Qt6 QOpenGLWidget does not guarantee the context is current outside paintGL().
+		makeCurrent();
 
+		// Create the offscreen FBO at exactly the physical framebuffer dimensions.
+		// Passing explicit dimensions avoids relying on the GL viewport state which
+		// Qt6 may not set predictably when makeCurrent() is called outside paintGL().
+		OffscreenBuffer offscreenBuffer(context(), mFramebufferWidth, mFramebufferHeight);
 
         if( rUseTiled ) {
+            // screenshotTiledPNG manages mScreenshotFboId and paintGL() per tile.
             int shaderChoice;
             mMeshVisual->getParamIntMeshGL( MeshGLParams::SHADER_CHOICE, &shaderChoice );
             bool drawNPR = ( MeshGLParams::SHADER_NPR==shaderChoice );
@@ -3104,14 +3113,22 @@ bool MeshWidget::screenshotSingle( const QString&   rFileName,   //!< Filename t
                 ret = screenshotTiledPNG( rFileName, rWidthReal, rHeigthReal, &offscreenBuffer, static_cast<int>(borderSize) );
             }
         } else {
+            // Single shot: render once directly into the offscreen FBO.
+            mScreenshotFboId = static_cast<int>( offscreenBuffer.getFboID() );
+            paintGL();
+            mScreenshotFboId = 0;
+            // The screenshot FBO is about to be destroyed when offscreenBuffer goes
+            // out of scope. Sync DEFAULT_FRAMEBUFFER_ID back to the widget FBO now so
+            // the mesh destructor (called before the next paintGL) uses a valid FBO.
+            if( mMeshVisual != nullptr ) {
+                mMeshVisual->setParamIntMeshGL( MeshGLParams::DEFAULT_FRAMEBUFFER_ID,
+                                                static_cast<int>( defaultFramebufferObject() ) );
+            }
             ret = screenshotPNG( rFileName, rWidthReal, rHeigthReal, &offscreenBuffer );
         }
 
-
-		bindFramebuffer(defaultFramebuffer);
-
-		mMeshVisual->setParamIntMeshGL(MeshGLParams::DEFAULT_FRAMEBUFFER_ID, defaultFramebuffer);
-		repaint();
+		// Schedule a normal display repaint so the window stays up-to-date.
+		update();
 	}
 	if(!ret)
 		cerr << "[MeshIO::" << __FUNCTION__ << "] Unknown extension/type '" << fileExtension.toStdString() << "' specified!" << endl;
@@ -3170,10 +3187,11 @@ bool MeshWidget::screenshotPDFUser() {
     QString texFileName;
     if( rTemplate == "Own template"){
 
-        texFileName = QFileDialog::getOpenFileName( this,
+        texFileName = QFileDialog::getOpenFileName( mMainWindow,
                                                           tr( "Import Latex template" ),
                                                           nullptr,
-                                                          tr( "tex-file (*.tex)" )
+                                                          tr( "tex-file (*.tex)" ),
+                                                          nullptr, QFileDialog::DontUseNativeDialog
                                                          );
         if( texFileName == nullptr) {
             return( false );
@@ -3294,13 +3312,13 @@ bool MeshWidget::screenshotPDF( const QString& rFileName, const bool rUseTiled, 
 	mMeshVisual->latexFetchFigureInfos( &replacmentStrings );
 
     //replace license placeholders
-    latexTemplate.replace( QRegExp( "__CC_PARAMETERS__" ), rCCparameter );
-    latexTemplate.replace( QRegExp( "__CC_VERSION__" ), rCCversion );
+    latexTemplate.replace( "__CC_PARAMETERS__", rCCparameter );
+    latexTemplate.replace( "__CC_VERSION__", rCCversion );
 
 	// Replace placeholders
-	latexTemplate.replace( QRegExp( "__FIGURE_IMAGE_FILE__" ), "\""+QString( prefixStem.c_str() )+"\"" );
-	latexTemplate.replace( QRegExp( "__SCALE_FACTOR_STRING__" ), scaleFactorTex );
-	latexTemplate.replace( QRegExp( "__SCALE_FACTOR__" ), QString( "%1" ).arg( scaleFactor, 'f' ).trimmed() );
+	latexTemplate.replace( "__FIGURE_IMAGE_FILE__", "\""+QString( prefixStem.c_str() )+"\"" );
+	latexTemplate.replace( "__SCALE_FACTOR_STRING__", scaleFactorTex );
+	latexTemplate.replace( "__SCALE_FACTOR__", QString( "%1" ).arg( scaleFactor, 'f' ).trimmed() );
 	for( pair<string, string>& replacmentString : replacmentStrings ) {
 		string placeHolder = replacmentString.first;
 		string content = replacmentString.second;
@@ -3398,10 +3416,12 @@ bool MeshWidget::fetchFrameAndZBufferTile( unsigned int rTilesX,    //!< Number 
 	for( unsigned int iy=0; iy<rImHeight; iy++ ) {
 		for( unsigned int ix=0; ix<rImWidth; ix++ ) {
 			uint64_t posInTile = tileOffsetX+tileOffsetY+(ix+iy*rImWidth*rTilesX)*4;
-			rImRGBA[posInTile]   = colorData[(rImWidth-1-ix)*3+  (iy)*rImWidth*3];
-			rImRGBA[posInTile+1] = colorData[(rImWidth-1-ix)*3+1+(iy)*rImWidth*3];
-			rImRGBA[posInTile+2] = colorData[(rImWidth-1-ix)*3+2+(iy)*rImWidth*3];
-			if( depthData[(rImWidth-1-ix)+(iy)*rImWidth] < 1.0f ) {
+			// Vertical flip (same convention as fetchFrameAndZBuffer): row 0 of output = top of screen.
+			// glGetTexImage returns rows bottom-to-top, so texture row (rImHeight-1-iy) is screen row iy.
+			rImRGBA[posInTile]   = colorData[ix*3+  (rImHeight-1-iy)*rImWidth*3];
+			rImRGBA[posInTile+1] = colorData[ix*3+1+(rImHeight-1-iy)*rImWidth*3];
+			rImRGBA[posInTile+2] = colorData[ix*3+2+(rImHeight-1-iy)*rImWidth*3];
+			if( depthData[ix+(rImHeight-1-iy)*rImWidth] < 1.0f ) {
 				rImRGBA[posInTile+3] = 255;
 			} else {
 				// Use white color together with full transparency
@@ -3699,13 +3719,13 @@ void MeshWidget::selectColorBackground() {
 #ifdef DEBUG_SHOW_ALL_METHOD_CALLS
 	cout << "[MeshWidget::" << __FUNCTION__ << "]" << endl;
 #endif
-	QColor rgbNew = QColorDialog::getColor( Qt::white, nullptr, 
-	                                        QString( "Background Color"), 
-	                                        QColorDialog::ShowAlphaChannel );
+	QColor rgbNew = QColorDialog::getColor( Qt::white, mMainWindow,
+	                                        QString( "Background Color"),
+	                                        QColorDialog::ShowAlphaChannel | QColorDialog::DontUseNativeDialog );
 	if( !rgbNew.isValid() ) { // Cancel was pressed.
 		return;
 	}
-	qglClearColor( rgbNew );
+	glClearColor( rgbNew.redF(), rgbNew.greenF(), rgbNew.blueF(), rgbNew.alphaF() );
 	update();
 }
 
@@ -4246,7 +4266,8 @@ bool MeshWidget::screenshotSVG() {
 	                                                 filePath +
                                                      QString::fromStdWString( mMeshVisual->getBaseName().wstring() ) +
 	                                                 ".svg",
-													 tr( "Scaleable Vector Graphic (*.svg)" ) );
+													 tr( "Scaleable Vector Graphic (*.svg)" ),
+													 nullptr, QFileDialog::DontUseNativeDialog );
 	if( fileName == nullptr ) { // Cancel pressed
 		SHOW_MSGBOX_WARN( tr("User abort"), tr("No files saved.") );
 		return false;
@@ -4255,7 +4276,8 @@ bool MeshWidget::screenshotSVG() {
 	// Optional:
 	QString fileNamePNG = fileName.left( fileName.lastIndexOf( "." ) ) + ".png";
 	fileNamePNG = QFileDialog::getSaveFileName( mMainWindow, tr( "Save screenshot as" ), \
-												fileNamePNG, tr( "Portable Network Graphics (*.png)" ) );
+												fileNamePNG, tr( "Portable Network Graphics (*.png)" ),
+												nullptr, QFileDialog::DontUseNativeDialog );
 
 	bool retVal = screenshotSVG( fileName, fileNamePNG );
 	if( retVal ) {
@@ -4297,23 +4319,18 @@ bool MeshWidget::screenshotSVG( const QString& rFileName, const QString& rFileNa
 	uint64_t imHeight;
 	unsigned char* imRGBA;
 	{
-		OffscreenBuffer offscreenBuffer(context());
+		makeCurrent();
+		OffscreenBuffer offscreenBuffer(context(), mFramebufferWidth, mFramebufferHeight);
 
-		int defaultBuffer = 0;
-		mMeshVisual->getParamIntMeshGL(MeshGLParams::DEFAULT_FRAMEBUFFER_ID, &defaultBuffer);
-		mMeshVisual->setParamIntMeshGL(MeshGLParams::DEFAULT_FRAMEBUFFER_ID, offscreenBuffer.getFboID());
+		mScreenshotFboId = static_cast<int>( offscreenBuffer.getFboID() );
+		paintGL();
+		mScreenshotFboId = 0;
 
-		//paint scene into offscreenBuffer
-		repaint();
-
-
-		if( !fetchFrameAndZBuffer( imRGBA, imWidth, imHeight, false, &offscreenBuffer ) ) { // mParamFlag[CROP_SCREENSHOTS]
+		if( !fetchFrameAndZBuffer( imRGBA, imWidth, imHeight, false, &offscreenBuffer ) ) {
 			return( false );
 		}
 
-		bindFramebuffer(defaultBuffer);
-		mMeshVisual->setParamIntMeshGL(MeshGLParams::DEFAULT_FRAMEBUFFER_ID, defaultBuffer);
-		repaint();
+		update();
 	}
 
 	SvgWriter svgWriter;
@@ -4898,7 +4915,8 @@ bool MeshWidget::exportPlaneIntersectPolyLinesSVG() {
     QString filePath = QString::fromStdWString( mMeshVisual->getFileLocation().wstring() );
 	QString fileName = QFileDialog::getSaveFileName( mMainWindow, tr( "Save intersections as" ), \
 	                                                 filePath + baseName + "_profiles.svg", \
-	                                                 tr( "Scaleable Vector Graphic (*.svg)" ) );
+	                                                 tr( "Scaleable Vector Graphic (*.svg)" ),
+	                                                 nullptr, QFileDialog::DontUseNativeDialog );
 	if( fileName.isEmpty() ) { // Cancel pressed
 		SHOW_MSGBOX_WARN( tr("User abort"), tr("No files saved.") );
 		return( false );
@@ -5379,8 +5397,10 @@ bool MeshWidget::screenshotTiledPNG(
 
 	//! 5. Fetch tiles by shifting.
 	GLdouble orthoViewPort[4];
-	orthoViewPort[2] = +bBoxRadius + (rBorderSize * heightRatio);              // bottom in glOrtho
-	orthoViewPort[3] = +bBoxRadius - realHeight + (rBorderSize * heightRatio); // top in glOrtho
+	// [3]=top, [2]=bottom: top > bottom (normal orientation) so glGetTexImage + Y-flip in
+	// fetchFrameAndZBufferTile produce the correct top-down image without a double flip.
+	orthoViewPort[3] = +bBoxRadius + (rBorderSize * heightRatio);              // top in glOrtho
+	orthoViewPort[2] = +bBoxRadius - realHeight + (rBorderSize * heightRatio); // bottom in glOrtho
 	//! a. Allocate memory for the frame- and z-buffer.
 	GLubyte* imArrayGL  = new GLubyte[imWidth*3*imHeight];
 	float* pixelZBuffer = new float[imWidth*imHeight];
@@ -5389,12 +5409,15 @@ bool MeshWidget::screenshotTiledPNG(
 	mMeshVisual->showProgressStart( "Tiled Rendering - High-res Screenhot" );
 	//! \todo Add/implement showProgressStart for MeshWidget!
 	for( unsigned int iy=0; iy<tilesY; iy++ ) {
-		orthoViewPort[0] = -bBoxRadius + realWidth - (rBorderSize * widthRatio); // left in glOrtho
-		orthoViewPort[1] = -bBoxRadius - (rBorderSize * widthRatio);             // right in glOrtho
+		// [0]=left, [1]=right: left < right (normal orientation) so tiles assemble left-to-right correctly.
+		orthoViewPort[0] = -bBoxRadius - (rBorderSize * widthRatio);             // left in glOrtho
+		orthoViewPort[1] = -bBoxRadius + realWidth - (rBorderSize * widthRatio); // right in glOrtho
 		cout << "[MeshWidget::" << __FUNCTION__ << "] |";
 		for( unsigned int ix=0; ix<tilesX; ix++ ) {
  			setView( orthoViewPort );
- 			repaint(); // update() will not work at this point as it tries to prevent flickering!
+ 			mScreenshotFboId = static_cast<int>( offscreenBuffer->getFboID() );
+ 			paintGL();
+ 			mScreenshotFboId = 0;
 			fetchFrameAndZBufferTile( tilesX, tilesY, ix, iy, imRGBA, imWidth, imHeight, offscreenBuffer, rBorderSize );
 			orthoViewPort[0] += realWidth - (2*rBorderSize * widthRatio);
 			orthoViewPort[1] += realWidth - (2*rBorderSize * widthRatio);
@@ -5771,7 +5794,7 @@ bool MeshWidget::writePNG( const QString& rFileName,        //!< Filename for wr
 
         if( file.open( QIODevice::ReadWrite ) ){
             QTextStream stream( &file );
-            stream << exifttl << endl;
+            stream << exifttl << Qt::endl;
         }
         file.close();
     }
@@ -6074,10 +6097,12 @@ bool MeshWidget::rotPlaneRoll(double rAngle)
 // OpenGL Stuff ----------------------------------------------------------------
 
 //! Re-draws the OpenGL widget, when its size has changed by calling setView().
-void MeshWidget::resizeGL( [[maybe_unused]]int width , [[maybe_unused]]int height  ) {
+void MeshWidget::resizeGL( int width , int height  ) {
 #ifdef DEBUG_SHOW_ALL_METHOD_CALLS
 	cout << "[MeshWidget::" << __FUNCTION__ << "] width: " << width << " height: " << height << endl;
 #endif
+	mFramebufferWidth  = width;
+	mFramebufferHeight = height;
 	setView();
 	update();
 }
@@ -6096,19 +6121,38 @@ void MeshWidget::resizeGL( [[maybe_unused]]int width , [[maybe_unused]]int heigh
 //! Thanks to OpenGL CoreProfile also the QPainter is rendered unuseable. So the informations are provided in a regular widget OUTSIDE the OpenGL context.
 //!
 //! Actions performed:
-void MeshWidget::paintEvent( QPaintEvent *rEvent ) {
+void MeshWidget::paintGL() {
 #ifdef DEBUG_SHOW_ALL_METHOD_CALLS
 	cout << "[MeshWidget::" << __FUNCTION__ << "]" << endl;
 #endif
 	PRINT_OPENGL_ERROR( "OLD_ERROR" );
 
-	QGLWidget::paintEvent( rEvent );
-	PRINT_OPENGL_ERROR( "QGLWidget::paintEvent( rEvent )" );
-
 	//! Initialize shaders (ONCE!)
     if( mVAO == _NOT_A_NUMBER_UINT_ ) {
 		initializeVAO();
 		initializeShaders();
+	}
+
+	// Qt6 QOpenGLWidget recreates its internal FBO on every resize, so the FBO ID
+	// changes. Always fetch the current Qt FBO via defaultFramebufferObject().
+	// During screenshot capture mScreenshotFboId is non-zero — redirect there instead.
+	{
+		int targetFboId = ( mScreenshotFboId != 0 )
+		                  ? mScreenshotFboId
+		                  : static_cast<int>( defaultFramebufferObject() );
+		bindFramebuffer( targetFboId );
+
+		// Keep DEFAULT_FRAMEBUFFER_ID in sync so that meshGL.cpp (ambient occlusion, etc.)
+		// restores to the correct FBO after its own temporary FBO switches.
+		if( mMeshVisual != nullptr ) {
+			mMeshVisual->setParamIntMeshGL( MeshGLParams::DEFAULT_FRAMEBUFFER_ID, targetFboId );
+		}
+	}
+
+	// Ensure the viewport always matches the physical framebuffer dimensions so that
+	// a stale glViewport from a previous subsystem never causes a squeeze/deformation.
+	if( mFramebufferWidth > 0 && mFramebufferHeight > 0 ) {
+		glViewport( 0, 0, mFramebufferWidth, mFramebufferHeight );
 	}
 
 	//! Clear color buffer.
@@ -6120,9 +6164,6 @@ void MeshWidget::paintEvent( QPaintEvent *rEvent ) {
 	PRINT_OPENGL_ERROR( "glClear( GL_DEPTH_BUFFER_BIT )" );
 
 	if( mMeshVisual == nullptr ) {
-		//! Do nothing, when no mesh is present.
-		//cerr << "{MeshWidget::" << __FUNCTION__ << "] ERROR: Mesh not present!" << endl;
-		swapBuffers(); // has to be called, when setAutoBufferSwap(false) was set in the constructor to preven flickering when QPainter.end is called!
 		return;
 	}
 
@@ -6260,7 +6301,6 @@ void MeshWidget::paintEvent( QPaintEvent *rEvent ) {
 	//	glEnable( GL_CULL_FACE );
 	//}
 
-	swapBuffers(); // has to be called, when setAutoBufferSwap(false) was set in the constructor to preven flickering when QPainter.end is called!
 #ifdef DEBUG_SHOW_ALL_METHOD_CALLS
 	cout << "[MeshWidget::" << __FUNCTION__ << "] DONE." << endl;
 #endif
@@ -6810,7 +6850,7 @@ void MeshWidget::mousePressEvent( QMouseEvent *rEvent ) {
 	double scaleFactor = 1.0;
 	getParamFloatMeshWidget( HIGHDPI_ZOOM_FACTOR, &scaleFactor );
 
-	mLastPos = rEvent->pos() * scaleFactor;
+	mLastPos = (rEvent->position() * scaleFactor).toPoint();
 
 	Qt::MouseButtons mouseButtonsPressed = rEvent->buttons();
 
@@ -6888,8 +6928,8 @@ void MeshWidget::mouseDoubleClickEvent( QMouseEvent* rEvent )
 		// Correct for OpenGL:
 		GLint viewport[4];
 		glGetIntegerv( GL_VIEWPORT, viewport );
-		const int yPixel = viewport[3] - rEvent->pos().y()*scaleFactor;
-		const int xPixel = rEvent->pos().x()*scaleFactor;
+		const int yPixel = viewport[3] - qRound(rEvent->position().y()*scaleFactor);
+		const int xPixel = qRound(rEvent->position().x()*scaleFactor);
 		Vector3D clickPos;
 
 		if( mMeshVisual->getWorldPointOnMesh( xPixel, yPixel, &clickPos ) ) {
@@ -6945,7 +6985,8 @@ void MeshWidget::setAnnotationTemplate(QJsonObject annotemplate){
 }
 
 bool MeshWidget::exportAnnotationAsMesh(){
-    QString fileName = QFileDialog::getSaveFileName(this, "Save File", "/home/", "Text Files (*.ply);;All Files (*.*)");
+    QString fileName = QFileDialog::getSaveFileName(mMainWindow, "Save File", "/home/", "Text Files (*.ply);;All Files (*.*)",
+                                                    nullptr, QFileDialog::DontUseNativeDialog);
     if (!fileName.isEmpty()) {
         auto selbackup=new std::set<Vertex*>();
         this->getMesh()->getSelectedVerts(selbackup);
@@ -6978,7 +7019,8 @@ void MeshWidget::initializeDefaultAnnotationTemplate(){
 }
 
 bool MeshWidget::exportAnnotationAsJSON(){
-    QString fileName = QFileDialog::getSaveFileName(this, "Save File", "/home/", "Text Files (*.ply);;All Files (*.*)");
+    QString fileName = QFileDialog::getSaveFileName(mMainWindow, "Save File", "/home/", "Text Files (*.ply);;All Files (*.*)",
+                                                    nullptr, QFileDialog::DontUseNativeDialog);
     if (!fileName.isEmpty()) {
         QJsonObject annojson=mLastAnnotation->getAnnotation("WKTSelector",this->getMesh(),fileName,"",false);
         QJsonDocument doc(annojson);
@@ -7048,22 +7090,22 @@ void MeshWidget::mouseMoveEvent( QMouseEvent* rEvent ) {
 	double scaleFactor = 1.0;
 	getParamFloatMeshWidget( HIGHDPI_ZOOM_FACTOR, &scaleFactor );
 
-	GLfloat dx = GLfloat( rEvent->x()*scaleFactor - mLastPos.x() ) / 2.0;
-	GLfloat dy = GLfloat( rEvent->y()*scaleFactor - mLastPos.y() ) / 2.0;
+	GLfloat dx = GLfloat( rEvent->position().x()*scaleFactor - mLastPos.x() ) / 2.0;
+	GLfloat dy = GLfloat( rEvent->position().y()*scaleFactor - mLastPos.y() ) / 2.0;
 
-	mLastPos = rEvent->pos() * scaleFactor;
+	mLastPos = (rEvent->position() * scaleFactor).toPoint();
     Vector3D clickPos;
-    mMeshVisual->getWorldPointOnMesh( rEvent->x(), rEvent->y(), &clickPos );
-    //QToolTip::showText(rEvent->globalPos(),QString::fromStdString("My cool tooltip! "+std::to_string(clickPos.getX())+" - "+std::to_string(clickPos.getY())+" - "+std::to_string(clickPos.getZ())+" - "+std::to_string(rEvent->x())+" - "+std::to_string(dx)+" - "+std::to_string(rEvent->y())+" "+std::to_string(dy)+" - "+std::to_string(mLastPos.x())));
+    mMeshVisual->getWorldPointOnMesh( qRound(rEvent->position().x()), qRound(rEvent->position().y()), &clickPos );
+    //QToolTip::showText(rEvent->globalPosition().toPoint(),QString::fromStdString("My cool tooltip! "+std::to_string(clickPos.getX())+" - "+std::to_string(clickPos.getY())+" - "+std::to_string(clickPos.getZ())+" - "+std::to_string(rEvent->x())+" - "+std::to_string(dx)+" - "+std::to_string(rEvent->y())+" "+std::to_string(dy)+" - "+std::to_string(mLastPos.x())));
     double ylength=this->getMesh()->getMaxY()-this->getMesh()->getMinY();
     if(!annotationlist.empty()){
         bool finished=false;
         if(!mLastAnnotation->isempty){
             if(mLastAnnotation->pointInAnnotationBBOX3D(clickPos.getX(),ylength-clickPos.getY(),clickPos.getZ())){
                 if(mLastAnnotation->leftOf!=nullptr && !mLastAnnotation->leftOf->isempty){
-                    QToolTip::showText(rEvent->globalPos(),/*QString::fromStdString(mLastAnnotation->leftOf->toHTML())+" "+*/QString::fromStdString(mLastAnnotation->toHTML()));
+                    QToolTip::showText(rEvent->globalPosition().toPoint(),/*QString::fromStdString(mLastAnnotation->leftOf->toHTML())+" "+*/QString::fromStdString(mLastAnnotation->toHTML()));
                 }else{
-                    QToolTip::showText(rEvent->globalPos(),"No Left Of "+QString::fromStdString(mLastAnnotation->toHTML()));
+                    QToolTip::showText(rEvent->globalPosition().toPoint(),"No Left Of "+QString::fromStdString(mLastAnnotation->toHTML()));
 
                 }
                 finished=true;
@@ -7074,9 +7116,9 @@ void MeshWidget::mouseMoveEvent( QMouseEvent* rEvent ) {
             for (Annotation* anno: annotationlist) {
                 if (anno->pointInAnnotationBBOX3D(clickPos.getX(), ylength-clickPos.getY(), clickPos.getZ())) {
                     /*if(anno->leftOf!=nullptr && !anno->leftOf->isempty){
-                        QToolTip::showText(rEvent->globalPos(),QString::fromStdString(anno->leftOf->toHTML())+" "+QString::fromStdString(anno->toHTML()));
+                        QToolTip::showText(rEvent->globalPosition().toPoint(),QString::fromStdString(anno->leftOf->toHTML())+" "+QString::fromStdString(anno->toHTML()));
                     }else{
-                        QToolTip::showText(rEvent->globalPos(), "No Left Of "+QString::fromStdString(anno->toHTML()));
+                        QToolTip::showText(rEvent->globalPosition().toPoint(), "No Left Of "+QString::fromStdString(anno->toHTML()));
                     }*/
                     //std::cout << "BBOX Vertices: " << std::to_string(anno->bboxVertices.size()) << "All Vertices: " << std::to_string(anno->vertices.size()) << endl;
                     if(this->paintAnnotationBorders) {
@@ -7528,7 +7570,7 @@ void MeshWidget::keyPressEvent( QKeyEvent *rEvent ) {
 		}
 	}
 	//cout << "[MeshWidget::" << __FUNCTION__ << "] Key: " << rEvent->key() << " ignored." << endl;
-	QGLWidget::keyPressEvent( rEvent );
+	QOpenGLWidget::keyPressEvent( rEvent );
 }
 
 
@@ -7961,20 +8003,6 @@ void MeshWidget::wheelEventZoom(
 	update();
 }
 
-//! Takes care to properly resize this OpenGL widget.
-void MeshWidget::resizeEvent( [[maybe_unused]] QResizeEvent * event  ) {
-#ifdef DEBUG_SHOW_ALL_METHOD_CALLS
-	std::cout << "[MeshWidget::" << __FUNCTION__ << "] " << event->size().width()
-	          << " x " << event->size().height() << std::endl;
-#endif
-	//QGLWidget::resizeEvent( event );
-	if( mMeshVisual == nullptr ) {
-		// No mesh present -> nothing to do.
-		return;
-	}
-	setView();
-	update();
-}
 
 //! Initial Setup of the camera, the light position(s) and the material properties.
 void MeshWidget::setViewInitial() {
@@ -8057,9 +8085,11 @@ void MeshWidget::setView( GLdouble* rOrthoViewPort //!< position and dimension o
 //	PRINT_OPENGL_ERROR( "glLoadIdentity()" );
 
 
-	//! Setup Viewport
-	GLfloat windowRatio = static_cast<GLfloat>(width())/static_cast<GLfloat>(height());
-	glViewport( 0, 0, width(), height() );
+	//! Setup Viewport — use physical framebuffer dimensions (set by resizeGL) not logical widget size.
+	int fbW = (mFramebufferWidth  > 0) ? mFramebufferWidth  : QOpenGLWidget::width();
+	int fbH = (mFramebufferHeight > 0) ? mFramebufferHeight : QOpenGLWidget::height();
+	GLfloat windowRatio = static_cast<GLfloat>(fbW) / static_cast<GLfloat>(fbH);
+	glViewport( 0, 0, fbW, fbH );
 
 	//! Estimate clipping planes (front and back) for the frustum.
 	// distance between camera and the bounding box center
@@ -8174,7 +8204,7 @@ void MeshWidget::setViewModelMat() {
 int MeshWidget::height() const {
 	double scaleFactor = 1.0;
 	getParamFloatMeshWidget( HIGHDPI_ZOOM_FACTOR, &scaleFactor );
-	return QGLWidget::height()*scaleFactor;
+	return QOpenGLWidget::height()*scaleFactor;
 }
 
 //! Overwritten method using a manual set zoom factor.
@@ -8183,7 +8213,7 @@ int MeshWidget::height() const {
 int MeshWidget::width() const {
 	double scaleFactor = 1.0;
 	getParamFloatMeshWidget( HIGHDPI_ZOOM_FACTOR, &scaleFactor );
-	return QGLWidget::width()*scaleFactor;
+	return QOpenGLWidget::width()*scaleFactor;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8209,12 +8239,13 @@ bool MeshWidget::setPlaneHNFByView()
 // -------------------------------------------------------------------------------------------------------------------------------------------------------------
 // implementation of helper class for offscreen buffer
 
-MeshWidget::OffscreenBuffer::OffscreenBuffer(QGLContext* context) : mContext(context)
+MeshWidget::OffscreenBuffer::OffscreenBuffer(QOpenGLContext* context, int width, int height)
+	: mContext(context), mTexWidth(width), mTexHeight(height)
 {
-	GLint viewportSize[4];
-	glGetIntegerv(GL_VIEWPORT, viewportSize);
-	mTexWidth = viewportSize[2];
-	mTexHeight = viewportSize[3];
+	// Save the currently-bound FBO so the destructor can restore it exactly.
+	GLint previousFbo = 0;
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFbo);
+	mPreviousFboId = static_cast<GLuint>(previousFbo);
 
 	mColorTextureBuffer = new unsigned char[mTexWidth * mTexHeight * 3];
 	mDepthTextureBuffer = new float[mTexWidth * mTexHeight];
@@ -8223,9 +8254,9 @@ MeshWidget::OffscreenBuffer::OffscreenBuffer(QGLContext* context) : mContext(con
 	using PglBindFramebuffer = void (*)(GLenum, GLuint);
 	using PglFramebufferTexture2D = void (*)(GLenum, GLenum, GLenum, GLuint, GLint);
 
-	PglGenFramebuffers genFramebuffers = reinterpret_cast<PglGenFramebuffers>(mContext->getProcAddress("glGenFramebuffers"));
-	PglBindFramebuffer bindFramebuffer = reinterpret_cast<PglBindFramebuffer>(mContext->getProcAddress("glBindFramebuffer"));
-	PglFramebufferTexture2D framebufferTexture2D = reinterpret_cast<PglFramebufferTexture2D>(mContext->getProcAddress("glFramebufferTexture2D"));
+	PglGenFramebuffers genFramebuffers = reinterpret_cast<PglGenFramebuffers>(QOpenGLContext::currentContext()->getProcAddress("glGenFramebuffers"));
+	PglBindFramebuffer bindFramebuffer = reinterpret_cast<PglBindFramebuffer>(QOpenGLContext::currentContext()->getProcAddress("glBindFramebuffer"));
+	PglFramebufferTexture2D framebufferTexture2D = reinterpret_cast<PglFramebufferTexture2D>(QOpenGLContext::currentContext()->getProcAddress("glFramebufferTexture2D"));
 
 	genFramebuffers(1, &mFboID);
 
@@ -8259,10 +8290,11 @@ MeshWidget::OffscreenBuffer::~OffscreenBuffer()
 	using PglBindFramebuffer = void (*)(GLenum, GLuint);
 	using PglDeleteFramebuffers = void (*)(GLsizei, GLuint *);
 
-	PglBindFramebuffer bindFramebuffer = reinterpret_cast<PglBindFramebuffer>(mContext->getProcAddress("glBindFramebuffer"));
-	PglDeleteFramebuffers deleteFramebuffer = reinterpret_cast<PglDeleteFramebuffers>(mContext->getProcAddress("glDeleteFramebuffers"));
+	PglBindFramebuffer bindFramebuffer = reinterpret_cast<PglBindFramebuffer>(QOpenGLContext::currentContext()->getProcAddress("glBindFramebuffer"));
+	PglDeleteFramebuffers deleteFramebuffer = reinterpret_cast<PglDeleteFramebuffers>(QOpenGLContext::currentContext()->getProcAddress("glDeleteFramebuffers"));
 
-	bindFramebuffer(GL_FRAMEBUFFER, 0);
+	// Restore the FBO that was bound before this OffscreenBuffer was created.
+	bindFramebuffer(GL_FRAMEBUFFER, mPreviousFboId);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDeleteTextures(1, &mColorTextureID);

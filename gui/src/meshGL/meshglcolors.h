@@ -22,7 +22,8 @@
 #ifndef MESHGLCOLORS_H
 #define MESHGLCOLORS_H
 
-#include <QtOpenGL/QtOpenGL>
+#include <QColor>
+#include <QOpenGLFunctions>
 
 class MeshGLColors {
 	public:

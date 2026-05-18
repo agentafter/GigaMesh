@@ -31,7 +31,8 @@
 
 // generic Qt includes:
 #include <QApplication>
-#include <QtOpenGL/QGLFormat>
+#include <QSurfaceFormat>
+#include <QOpenGLContext>
 #include <QMessageBox>
 #include <QTranslator>
 
@@ -133,22 +134,18 @@ int main( int argc, char *argv[] ) {
 	printBuildInfo();
 
 	// System checks:
-	if( !QGLFormat::hasOpenGL() ) {
-		LOG::fatal() << "[Main] ERROR: This system has no OpenGL support!\n";
-		SHOW_MSGBOX_WARN( "No OpenGL", "ERROR: This system has no OpenGL support!" );
+	if( QOpenGLContext::openGLModuleType() == QOpenGLContext::LibGLES ) {
+		LOG::fatal() << "[Main] ERROR: This system has no desktop OpenGL support!\n";
+		SHOW_MSGBOX_WARN( "No OpenGL", "ERROR: This system has no desktop OpenGL support!" );
 		exit( EXIT_FAILURE );
 	}
-	// Specify an OpenGL 3.2 format using the Core profile.
+	// Specify an OpenGL 3.3 or 4.3 Core Profile format.
 	// That is, no old-school fixed pipeline functionality
-	QGLFormat glFormat; //QGLFormat is deprecated...
-	//! \todo QSurfaceFormat is the replacment for the deprecated QGLFormat
-	if(QGLFormat::openGLVersionFlags() & QGLFormat::OpenGL_Version_4_3)
-		glFormat.setVersion( 4, 3 );        //Higher Version needed to handle transparency in shader. Revert to 3.3 if it breaks core functionalities...
-	else
-		glFormat.setVersion( 3, 3 );                   // The version has to be larger than 3.3 due to geometry shaders and other usefull stuff.
-
-	glFormat.setProfile( QGLFormat::CoreProfile ); // Do not even think to change the Profile to CompatibilityProfile !!!
-	glFormat.setSampleBuffers( true );
+	QSurfaceFormat glFormat;
+	glFormat.setVersion( 4, 3 );        // Higher version needed for transparency shader
+	glFormat.setProfile( QSurfaceFormat::CoreProfile ); // Do not even think to change the Profile to CompatibilityProfile !!!
+	glFormat.setSamples( 4 );
+	QSurfaceFormat::setDefaultFormat( glFormat );
 
 	// The main window:
 	QGMMainWindow mainWindow;

@@ -21,6 +21,7 @@
 //
 
 #include "MeshQtCSVImportExport.h"
+#include <QRegularExpression>
 
 // C++ includes
 #include <iostream>
@@ -125,7 +126,7 @@ bool MeshQtCSVImportExport::importVertexDataFromCSV(const QString& inputFilename
 	                    vertexCoordinatesInputFile.size()/
 	                                        heuristicBytesPerLine;
 
-	const QRegExp matchDelimitersRegex("(\\ |\\t)");
+	const QRegularExpression matchDelimitersRegex(R"([ \t])");
 
 	std::vector<std::pair<int, std::array<double, 4>>> vertexIndexPositionFunctionValueVector;
 
@@ -404,7 +405,8 @@ bool MeshQtCSVImportExport::importVertexDataFromCSVDialog(const std::function<vo
 	                        QFileDialog::getOpenFileName(nullptr,
 	                                                        "TPS-RPM transformation matrix import",
 	                                                        vertexCoordinatesInputFileDirectory,
-	                                                        "CSV files (*.csv *.mat)");
+	                                                        "CSV files (*.csv *.mat)",
+	                                                        nullptr, QFileDialog::DontUseNativeDialog);
 
 	return importVertexDataFromCSV(
 	                vertexCoordinatesInputFileName,
@@ -687,7 +689,8 @@ bool MeshQtCSVImportExport::exportVertexCoordinatesToCSVDialog(const bool select
 	                            QFileDialog::getSaveFileName(nullptr,
 	                                                            "Coordinate export of the selected vertices",
 	                                                            vertexCoordinatesFileDirectory,
-	                                                            "CSV files (*.csv *.mat)");
+	                                                            "CSV files (*.csv *.mat)",
+	                                                            nullptr, QFileDialog::DontUseNativeDialog);
 
 	return exportVertexCoordinatesToCSV(vertexCoordinatesFileName,
 	                                            selectedVerticesOnly);
@@ -831,7 +834,8 @@ bool MeshQtCSVImportExport::exportSelPrimsPositionsToCSVDialog()
 	                                                            "Export of positions of "
 	                                                            "selected primitives",
 	                                                            selPrimsPositionsFileDirectory,
-	                                                            "CSV files (*.csv *.mat)");
+	                                                            "CSV files (*.csv *.mat)",
+	                                                            nullptr, QFileDialog::DontUseNativeDialog);
 
 	return exportSelPrimsPositionsToCSV(
 	                    selPrimsPositionsFileName);

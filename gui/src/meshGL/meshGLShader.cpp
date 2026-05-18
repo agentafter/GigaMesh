@@ -25,7 +25,6 @@
 #include <iostream> // cerr
 
 #include <QColor>
-#include <QtOpenGL/QGLWidget>
 #include <QMessageBox>
 #include <QIcon>
 
@@ -53,7 +52,7 @@ using PglActiveTexture = void (*)(GLenum);
 
 //! Constructor
 MeshGLShader::MeshGLShader(
-                QGLContext* rGLContext,
+                QOpenGLContext* rGLContext,
                 const filesystem::path& rFileName,
                 bool& rReadSuccess
 ) : MeshGL( rGLContext, rFileName, rReadSuccess ) {
@@ -141,8 +140,8 @@ MeshGLShader::MeshGLShader(
 
 	glEnable( GL_VERTEX_PROGRAM_POINT_SIZE );
 	PRINT_OPENGL_ERROR( "glEnable( GL_VERTEX_PROGRAM_POINT_SIZE );" );
-	QGLFormat::OpenGLContextProfile currentProfile = mOpenGLContext->format().profile();
-	if( currentProfile != QGLFormat::CoreProfile ) {
+	QSurfaceFormat::OpenGLContextProfile currentProfile = mOpenGLContext->format().profile();
+	if( currentProfile != QSurfaceFormat::CoreProfile ) {
 		glEnable( GL_POINT_SPRITE );  // <- deprecated with OpenGL 3.x BUT THANKS TO A BUG WE NEED it, when the Coreprofile is NOT used!
 		PRINT_OPENGL_ERROR( "glEnable( GL_POINT_SPRITE );" );
 	}
@@ -1546,11 +1545,18 @@ void MeshGLShader::vboPaintVertices() {
 		QColor colorSolid( 255, 128, 0, 255 );
 		mShaderVertexSprites->setUniformValue( "colorSolid", colorSolid );
 		PRINT_OPENGL_ERROR( "Shader setUniformValue" );
-		// Map and draw elements
-		GLuint primSelID[1];
-		primSelID[0] = static_cast<GLuint>(mPrimSelected->getIndex());
-		glDrawElements( GL_POINTS, 1, GL_UNSIGNED_INT, primSelID );
-		PRINT_OPENGL_ERROR( "glDrawElements( GL_POINT, ..., GL_UNSIGNED_INT, NULL )" );
+		// Draw the single selected vertex using a temporary element buffer.
+		// glDrawElements with a client-side pointer is not possible in Qt6 OpenGL Core Profile.
+		// Use the same IndexBuffer pattern as all other vertex draws in this function.
+		GLuint selIdx = static_cast<GLuint>(mPrimSelected->getIndex());
+		QOpenGLBuffer tmpEBO( QOpenGLBuffer::IndexBuffer );
+		tmpEBO.create();
+		tmpEBO.bind();
+		tmpEBO.allocate( &selIdx, static_cast<int>(sizeof(selIdx)) );
+		glDrawElements( GL_POINTS, 1, GL_UNSIGNED_INT, nullptr );
+		PRINT_OPENGL_ERROR( "glDrawElements( GL_POINTS, 1, GL_UNSIGNED_INT, nullptr )" );
+		tmpEBO.release();
+		tmpEBO.destroy();
 	}
 
 	if( drawSinglePoints ) {
@@ -1952,14 +1958,22 @@ void MeshGLShader::vboPaintFacesIndexed() {
 		mShaderDatumObjects->setUniformValue( "uFaceShiftViewZ", faceShiftZ );
 		PRINT_OPENGL_ERROR( "Shader setUniformValue" );
 		faceShiftZ -= 0.0001F;
-		// Map and draw elements
+		// Draw the single selected face.
+		// glDrawElements with a client-side pointer is not possible in Qt6 OpenGL Core Profile.
+		// Use a temporary index buffer instead.
 		GLuint primSelID[3];
 		Face*  selFace = static_cast<Face*>(mPrimSelected);
 		primSelID[0] = selFace->getVertA()->getIndex();
 		primSelID[1] = selFace->getVertB()->getIndex();
 		primSelID[2] = selFace->getVertC()->getIndex();
-		glDrawElements( GL_TRIANGLES, 3, GL_UNSIGNED_INT, primSelID );
-		PRINT_OPENGL_ERROR( "glDrawElements( GL_TRIANGLES, 3, GL_UNSIGNED_INT, primSelID )" );
+		QOpenGLBuffer tmpEBO( QOpenGLBuffer::IndexBuffer );
+		tmpEBO.create();
+		tmpEBO.bind();
+		tmpEBO.allocate( primSelID, static_cast<int>(sizeof(primSelID)) );
+		glDrawElements( GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr );
+		PRINT_OPENGL_ERROR( "glDrawElements( GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr )" );
+		tmpEBO.release();
+		tmpEBO.destroy();
 	}
 
 	// Turn of the clipping plane. This prevents flickering of the mesh plane (currently in someTriangles).
@@ -2500,14 +2514,22 @@ void MeshGLShader::vboPaintWireframe() {
 		mShaderWireframe->setUniformValue( "uFaceShiftViewZ", faceShiftZ );
 		PRINT_OPENGL_ERROR( "Shader setUniformValue" );
 		faceShiftZ -= 0.0001F;
-		// Map and draw elements
+		// Draw the single selected face.
+		// glDrawElements with a client-side pointer is not possible in Qt6 OpenGL Core Profile.
+		// Use a temporary index buffer instead.
 		GLuint primSelID[3];
 		Face*  selFace = static_cast<Face*>(mPrimSelected);
 		primSelID[0] = selFace->getVertA()->getIndex();
 		primSelID[1] = selFace->getVertB()->getIndex();
 		primSelID[2] = selFace->getVertC()->getIndex();
-		glDrawElements( GL_TRIANGLES, 3, GL_UNSIGNED_INT, primSelID );
-		PRINT_OPENGL_ERROR( "glDrawElements( GL_TRIANGLES, 3, GL_UNSIGNED_INT, primSelID )" );
+		QOpenGLBuffer tmpEBO( QOpenGLBuffer::IndexBuffer );
+		tmpEBO.create();
+		tmpEBO.bind();
+		tmpEBO.allocate( primSelID, static_cast<int>(sizeof(primSelID)) );
+		glDrawElements( GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr );
+		PRINT_OPENGL_ERROR( "glDrawElements( GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr )" );
+		tmpEBO.release();
+		tmpEBO.destroy();
 	}
 
 	// Turn of the clipping plane. This prevents flickering of the mesh plane (currently in someTriangles).

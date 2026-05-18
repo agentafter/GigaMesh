@@ -52,7 +52,7 @@ MeshQt::MeshQt( const QString&           rFileName,           //!< File to read
 		MeshWidgetParams* rMeshWidgetParams,   //!< Parameter pointer to the MeshWidget settings.
 		MeshGLColors*     rRenderColors,       //!< Colors i.e. second set of paramters of the MeshWidget.
 		QGMMainWindow*    setmMainWindow,      //!< required to connect signals
-		QGLContext*       rContext,            //!< OpenGL context for rendering
+		QOpenGLContext*   rContext,            //!< OpenGL context for rendering
 		QObject*          rParent              //!< Qt default
     ) : QObject( rParent ), MeshGLShader( rContext, rFileName.toStdWString(), rReadSuccess ),
                                      MeshQtCSVImportExport(this,
@@ -706,7 +706,8 @@ bool MeshQt::exportPolyLinesCoords() {
 
     QString filePath = QString::fromStdWString( getFileLocation().wstring() );
 	QString fileName = QFileDialog::getSaveFileName( mMainWindow, tr( "Export polygonal lines as vertex list" ), \
-													 filePath,    tr( "Polygonal lines ASCII (*.pline)" ) );
+													 filePath,    tr( "Polygonal lines ASCII (*.pline)" ),
+													 nullptr, QFileDialog::DontUseNativeDialog );
 	if( fileName.length() == 0 ) {
 		return false;
 	}
@@ -743,7 +744,8 @@ bool MeshQt::exportPolyLinesCoordsProjected() {
     QString filePath = QString::fromStdWString( getFileLocation().wstring() );
 	QString fileName = QFileDialog::getSaveFileName( mMainWindow, tr( "Export polygonal lines as vertex list" ),
                                                      filePath + QString::fromStdWString(getBaseName().wstring()) +
-	                                                 ".pline", tr( "Polygonal lines ASCII (*.pline)" ) );
+	                                                 ".pline", tr( "Polygonal lines ASCII (*.pline)" ),
+	                                                 nullptr, QFileDialog::DontUseNativeDialog );
 	if( fileName.length() == 0 ) {
 		return false;
 	}
@@ -769,7 +771,8 @@ bool MeshQt::exportPolyLinesFuncVals() {
     QString filePath = QString::fromStdWString( getFileLocation().wstring() );
 	QString fileName = QFileDialog::getSaveFileName( mMainWindow, tr( "Export polygonal lines as vertex list" ), \
 	                                                 filePath +
-                                                     QString::fromStdWString(getBaseName().wstring()) + ".txt", tr( "Run-length and function values ASCII (*.txt)" ) );
+                                                     QString::fromStdWString(getBaseName().wstring()) + ".txt", tr( "Run-length and function values ASCII (*.txt)" ),
+	                                                 nullptr, QFileDialog::DontUseNativeDialog );
 	if( fileName.length() == 0 ) {
 		return false;
 	}
@@ -789,7 +792,8 @@ bool MeshQt::exportFuncVals() {
 	QString fileName = QFileDialog::getSaveFileName( mMainWindow, tr( "Export function values" ),
 	                                                 filePath + "/" +
                                                      QString::fromStdWString(getBaseName().wstring()) + "_funcvals.txt",
-													 tr( "ASCII text (*.txt)" ) );
+													 tr( "ASCII text (*.txt)" ),
+													 nullptr, QFileDialog::DontUseNativeDialog );
 	if( fileName.length() == 0 ) {
 		return false;
 	}
@@ -813,7 +817,8 @@ bool MeshQt::exportFuncVals() {
 bool MeshQt::exportFaceNormalAngles() {
 	//! Handle GUI request to export normals in spherical coordinates.
 	//! see MeshQt::exportFaceNormalAngles and MeshGL::exportFaceNormalAngles
-	QString fileName = QFileDialog::getSaveFileName( mMainWindow, tr( "Export Face Normals, Spherical" ), nullptr, tr( "Face normals, spherical ASCII (*.facen)" ) );
+	QString fileName = QFileDialog::getSaveFileName( mMainWindow, tr( "Export Face Normals, Spherical" ), nullptr, tr( "Face normals, spherical ASCII (*.facen)" ),
+	                                                 nullptr, QFileDialog::DontUseNativeDialog );
 	if( fileName.length() > 0 ) {
 		return exportFaceNormalAngles( fileName.toStdString() );
 	}
@@ -830,7 +835,8 @@ void MeshQt::exportNormalSphereData()
 {
     QString filePath = QString::fromStdWString( getFileLocation().wstring() );
 	QString fileName = QFileDialog::getSaveFileName( mMainWindow, tr( "Export normal data mapped on IcoSPhere" ), \
-													 filePath,    tr( "CSV file (*.csv)" ) );
+													 filePath,    tr( "CSV file (*.csv)" ),
+													 nullptr, QFileDialog::DontUseNativeDialog );
 	if( fileName.length() == 0 ) {
 		return;
 	}
@@ -992,7 +998,8 @@ bool MeshQt::removeUncleanSmallUser() {
 
         QString fileLocation = QString::fromStdWString( getFileLocation().wstring() );
         fileLocation += fileSuggest;
-        fileName = QFileDialog::getSaveFileName( mMainWindow, tr( "Save as" ), fileLocation, tr( "3D-Files (*.obj *.ply *.wrl *.txt *.xyz)" ) );
+        fileName = QFileDialog::getSaveFileName( mMainWindow, tr( "Save as" ), fileLocation, tr( "3D-Files (*.obj *.ply *.wrl *.txt *.xyz)" ),
+                                                 nullptr, QFileDialog::DontUseNativeDialog );
 	}
 
 	// Store old mesh size to determine the number of changes
@@ -1103,7 +1110,8 @@ bool MeshQt::completeRestore() {
         fileLocation += fileSuggest;
 		fileName = QFileDialog::getSaveFileName( \
 		               mMainWindow, tr( "Save as" ), \
-                       fileLocation, tr( "3D-Files (*.obj *.ply *.wrl *.txt *.xyz)" ) \
+                       fileLocation, tr( "3D-Files (*.obj *.ply *.wrl *.txt *.xyz)" ),
+		               nullptr, QFileDialog::DontUseNativeDialog
 		           );
 	}
     //get parameters from Settings
@@ -3916,11 +3924,11 @@ void MeshQt::selectColor( MeshGLColors::eColorSettings rColorId ) {
 	QColor colorBackFaceDefault( 128, 92, 92, 255 ); // See MeshGLColors::MeshGLColors()
 
 	// Color Dialog
-	QColorDialog colorDialog( colorTmp );
+	QColorDialog colorDialog( colorTmp, mMainWindow );
 	colorDialog.setCurrentColor( colorTmp );
 	colorDialog.setCustomColor( 0, colorBackFaceDefault );
 	colorDialog.setWindowTitle( tr("Choose color") );
-	colorDialog.setOption( QColorDialog::DontUseNativeDialog, false ); // This option appears to be interesting on Mac builds!
+	colorDialog.setOption( QColorDialog::DontUseNativeDialog, true );
 	colorDialog.setOption( QColorDialog::ShowAlphaChannel, true );
 	if( colorDialog.exec() != QDialog::Accepted ) {
 		return;
@@ -4126,7 +4134,7 @@ void MeshQt::visualizeFeatAutoCorrSelectedVert() {
 		emit statusMessage( "ERROR: Visualization of Auto-Correlation and Correlation of Vertex Features failed!" );
 		return;
 	}
-	setVertexFuncValues( vertices, funcValues, vertCount, ( QString("Auto-Correlation and Correlation of Vertex Features to ")+QString(getPrimitiveSelected()->getIndex()) ).toStdString() );
+	setVertexFuncValues( vertices, funcValues, vertCount, ( QString("Auto-Correlation and Correlation of Vertex Features to ")+QString::number(getPrimitiveSelected()->getIndex()) ).toStdString() );
 	setParamIntMeshGL( TEXMAP_CHOICE_FACES, TEXMAP_VERT_FUNCVAL );
 	delete[] vertices;
 	delete[] funcValues;
@@ -5095,7 +5103,8 @@ bool MeshQt::exportFeatureVectors()
 	QString fileName = QFileDialog::getSaveFileName( mMainWindow, tr( "Export feature vectors" ),
 	                                                 filePath +
 	                                                 QString::fromStdWString(L"/" + getBaseName().wstring() + L"_featureVectors.txt"),
-													 tr( "Feature Vectors (*.txt *.mat)" ) );
+													 tr( "Feature Vectors (*.txt *.mat)" ),
+													 nullptr, QFileDialog::DontUseNativeDialog );
 	if( fileName.length() == 0 ) {
 		return false;
 	}

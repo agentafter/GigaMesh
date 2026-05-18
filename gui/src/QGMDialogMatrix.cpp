@@ -115,7 +115,7 @@ QGMDialogMatrix::QGMDialogMatrix(QWidget *parent) :
 	connect(ui->doubleSpinBox_axisY, QOverload<double>::of(&QDoubleSpinBox::valueChanged), updateRotValue);
 	connect(ui->doubleSpinBox_axisZ, QOverload<double>::of(&QDoubleSpinBox::valueChanged), updateRotValue);
 
-	connect(ui->buttonGroup_axisSel, QOverload<int>::of(&QButtonGroup::buttonClicked), updateRotValue);
+	connect(ui->buttonGroup_axisSel, &QButtonGroup::idClicked, [updateRotValue](int){ updateRotValue(); });
 
 	connect(ui->horizontalSlider_angle, &QSlider::valueChanged, this, &QGMDialogMatrix::updateRotateBySlider);
 
@@ -138,7 +138,7 @@ void QGMDialogMatrix::fetchClipboard()
 {
 	QString clipBoardStr = QApplication::clipboard()->text( QClipboard::Clipboard );
 
-    const QStringList values = clipBoardStr.simplified().split( " ", QString::SkipEmptyParts );
+    const QStringList values = clipBoardStr.simplified().split( " ", Qt::SkipEmptyParts );
 
 	if(values.size() != 16)
 	{

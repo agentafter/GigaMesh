@@ -23,7 +23,6 @@
 #include "DialogFindTextures.h"
 #include "ui_DialogFindTextures.h"
 
-#include <QGLWidget>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QLabel>
@@ -67,7 +66,7 @@ QString FileSelectWidget::sSupportedImageFormats = QString();
 FileSelectWidget::FileSelectWidget(const QString& fileName, QWidget* parent) : QWidget(parent), mFile(fileName)
 {
 	auto layout = new QHBoxLayout;
-	layout->setMargin(0);
+	layout->setContentsMargins(0, 0, 0, 0);
 
 	this->setLayout(layout);
 

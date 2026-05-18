@@ -52,7 +52,9 @@
 	//#include <QtOpenGL>
 	//#include <GL/glu.h>
 #endif
-#include <QtOpenGL/QGLWidget>
+#include <QOpenGLWidget>
+#include <QOpenGLContext>
+#include <QSurfaceFormat>
 #include <QOpenGLShaderProgram>
 
 class QGMMainWindow;
@@ -76,7 +78,7 @@ class MeshQt;
 //!
 //! Selection of a Primitive: only one type (Vertex, Edge or Face) can be selected.
 
-class MeshWidget : public QGLWidget, public MeshWidgetParams, public MeshGLColors {
+class MeshWidget : public QOpenGLWidget, public MeshWidgetParams, public MeshGLColors {
     Q_OBJECT
 
 
@@ -89,7 +91,7 @@ class MeshWidget : public QGLWidget, public MeshWidgetParams, public MeshGLColor
 
 public:
 	// Constructor and Destructor:
-	MeshWidget( const QGLFormat& format, QWidget* parent );
+	MeshWidget( const QSurfaceFormat& format, QWidget* parent );
 	~MeshWidget() override;
     bool paintAnnotationBorders=true;
     QMap<QString,QJsonObject> annotationtemplates;
@@ -219,7 +221,7 @@ private:
 	class OffscreenBuffer
 	{
 	public:
-		OffscreenBuffer(QGLContext *context);
+		OffscreenBuffer(QOpenGLContext *context, int width, int height);
 		~OffscreenBuffer();
 
 		OffscreenBuffer(const OffscreenBuffer& other) = delete;
@@ -238,8 +240,9 @@ private:
 		GLuint mColorTextureID;
 		GLuint mDepthTextureID;
 		GLuint mFboID;
+		GLuint mPreviousFboId = 0; //!< FBO that was bound before construction; restored on destruction.
 
-		QGLContext* mContext;
+		QOpenGLContext* mContext;
 		int mTexWidth;
 		int mTexHeight;
 		unsigned char* mColorTextureBuffer;
@@ -339,12 +342,10 @@ private:
 	void initializeVAO();
 	void initializeShaders();
 	void resizeGL( int width, int height ) override;
-	void paintEvent( QPaintEvent *rEvent ) override;
+	void paintGL() override;
 	void paintSelection();
 	bool paintHistogram();
 	bool paintHistogramScene();
-	void resizeEvent( QResizeEvent * event ) override;
-
 	// Keyboard and Mouse interaction:
 	//------------------------------------------------------------------------------------------------------------------------------------------------------
 	void mousePressEvent( QMouseEvent *rEvent ) override;
@@ -401,6 +402,9 @@ private:
 	// Vertex Buffer Objects and Shaders for the widget's background
 	//------------------------------------------------------------------------------------------------------------------------------------------------------
 	GLuint mVAO; //!< Vertex Array Object - has to be created!
+	int mFramebufferWidth  = 0; //!< Physical framebuffer width set by resizeGL (physical pixels, not logical).
+	int mFramebufferHeight = 0; //!< Physical framebuffer height set by resizeGL (physical pixels, not logical).
+	int mScreenshotFboId   = 0; //!< Non-zero during screenshot capture; paintGL() redirects rendering here.
 	enum eVBOs {
 		VBO_BACKGROUND_VERTICES, //!< VBO: with four vertices for the background canvas.
 		VBO_ARRAY_COUNT          //!< Number of VBOs.

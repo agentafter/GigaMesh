@@ -31,7 +31,7 @@
 // generic Qt includes:
 #include <QtGui>
 #include <QMainWindow>
-#include <QtOpenGL/QGLFormat>
+#include <QSurfaceFormat>
 
 // Qt Interface includes:
 #include "ui_mainWin.h"
@@ -82,7 +82,7 @@ private:
 	void initMeshSignals(); // to be called ONLY from the constructor.
 
 public:
-	bool setupMeshWidget( const QGLFormat& rGLFormat );
+	bool setupMeshWidget( const QSurfaceFormat& rGLFormat );
 	bool setupHighDPI20();
 
 protected:

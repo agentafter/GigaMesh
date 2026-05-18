@@ -24,7 +24,10 @@
 
 #include "meshGL.h"
 #include <QOpenGLFunctions_3_3_Core>
-#include <QMatrix>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLBuffer>
+#include <QOpenGLVertexArrayObject>
+#include <QMatrix4x4>
 
 class PinRenderer
 {
