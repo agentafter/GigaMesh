@@ -300,7 +300,7 @@ bool MeshGL::labelsChanged() {
 		return Mesh::labelsChanged();
 }
 
-QColor* MeshGL::labelIDToColor(u_int64 labelid){
+QColor* MeshGL::labelIDToColor(uint64_t labelid){
     return nullptr;
 }
 

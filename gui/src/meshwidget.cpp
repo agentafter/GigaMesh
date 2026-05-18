@@ -24,6 +24,8 @@
 #include "meshGL/glmacros.h"
 
 // generic Qt includes:
+#include <QCoreApplication>
+#include <QEventLoop>
 #include <QFileDialog>
 #include <QQuaternion>
 #include <QToolTip>
@@ -893,6 +895,10 @@ bool MeshWidget::fileOpen( const QString& fileName ) {
 #ifdef DEBUG_SHOW_ALL_METHOD_CALLS
 	cout << "[MeshWidget::" << __FUNCTION__ << "]" << endl;
 #endif
+	// Qt6: ensure the GL context is current so that mesh destructor GL calls
+	// (glRemove, releaseFramebuffersNPR, etc.) and the new MeshQt constructor
+	// (glGetString, glClearColor) have a valid context.
+	makeCurrent();
 
 	//check if child dialogs exist an close them
 	foreach (QObject* obj, this->children()) {
@@ -2288,6 +2294,13 @@ bool MeshWidget::screenshotViewsDirectory() {
 			orthoSetDPI( printResDPI );
 		}
 
+		// Qt6: process the pending update() queued by defaultViewLightZoom()
+		// inside fileOpen(). This lets Qt6 complete its internal FBO setup and
+		// initialise the new mesh's lazy GL resources (VBOs, shaders) via a
+		// normal paintGL() before we call paintGL() manually in screenshotSingle().
+		makeCurrent();
+		QCoreApplication::processEvents( QEventLoop::ExcludeUserInputEvents );
+
 		// Create PNGs
 		string fileNamePattern;
 		getParamStringMeshWidget( FILENAME_EXPORT_VIEWS, &fileNamePattern );
@@ -3116,6 +3129,9 @@ bool MeshWidget::screenshotSingle( const QString&   rFileName,   //!< Filename t
             // Single shot: render once directly into the offscreen FBO.
             mScreenshotFboId = static_cast<int>( offscreenBuffer.getFboID() );
             paintGL();
+            // Qt6: flush all pending GPU commands so the texture data is fully
+            // written before glGetTexImage reads it back below.
+            glFinish();
             mScreenshotFboId = 0;
             // The screenshot FBO is about to be destroyed when offscreenBuffer goes
             // out of scope. Sync DEFAULT_FRAMEBUFFER_ID back to the widget FBO now so
@@ -8276,7 +8292,9 @@ MeshWidget::OffscreenBuffer::OffscreenBuffer(QOpenGLContext* context, int width,
 	glBindTexture(GL_TEXTURE_2D, mDepthTextureID);
 	glPixelStorei(GL_PACK_ALIGNMENT,1);
 	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, mTexWidth, mTexHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+	// GL_DEPTH_COMPONENT24 is required in Core Profile; unsized GL_DEPTH_COMPONENT
+	// is not a valid internal format and generates GL_INVALID_ENUM on strict drivers.
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, mTexWidth, mTexHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 

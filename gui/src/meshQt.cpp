@@ -4102,7 +4102,7 @@ void MeshQt::visualizeFeatCorrSelectedVert() {
 		emit statusMessage( "ERROR: Visualization of Correlation of Vertex Features failed!" );
 		return;
 	}
-	setVertexFuncValues( vertices, funcValues, vertCount, ( QString("Correlation of Vertex Features to ")+QString(getPrimitiveSelected()->getIndex()) ).toStdString() );
+	setVertexFuncValues( vertices, funcValues, vertCount, ( QString("Correlation of Vertex Features to ")+QString::number(getPrimitiveSelected()->getIndex()) ).toStdString() );
 	setParamIntMeshGL( TEXMAP_CHOICE_FACES, TEXMAP_VERT_FUNCVAL );
 	delete[] vertices;
 	delete[] funcValues;
