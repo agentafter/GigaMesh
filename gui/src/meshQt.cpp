@@ -3923,13 +3923,15 @@ void MeshQt::selectColor( MeshGLColors::eColorSettings rColorId ) {
 	colorTmp.setRgbF( colorTmpStored[0], colorTmpStored[1], colorTmpStored[2], colorTmpStored[3] );
 	QColor colorBackFaceDefault( 128, 92, 92, 255 ); // See MeshGLColors::MeshGLColors()
 
-	// Color Dialog
-	QColorDialog colorDialog( colorTmp, mMainWindow );
+	// Color Dialog — options must be set before setCurrentColor so the alpha slider
+	// is created (ShowAlphaChannel) before the color is applied; otherwise Qt6
+	// initialises the alpha slider at 0 and selectedColor() returns alpha=0.
+	QColorDialog colorDialog( mMainWindow );
+	colorDialog.setOption( QColorDialog::DontUseNativeDialog, true );
+	colorDialog.setOption( QColorDialog::ShowAlphaChannel, true );
 	colorDialog.setCurrentColor( colorTmp );
 	colorDialog.setCustomColor( 0, colorBackFaceDefault );
 	colorDialog.setWindowTitle( tr("Choose color") );
-	colorDialog.setOption( QColorDialog::DontUseNativeDialog, true );
-	colorDialog.setOption( QColorDialog::ShowAlphaChannel, true );
 	if( colorDialog.exec() != QDialog::Accepted ) {
 		return;
 	}

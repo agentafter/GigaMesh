@@ -788,6 +788,7 @@ void QGMMainWindow::initMeshSignals() {
 
 	// INT: Add parameter, double IDs for MeshGL class:
 	actionLabelColorShift->setProperty( "gmMeshGLParamInt", MeshGLParams::COLMAP_LABEL_OFFSET );
+	actionLabelBackgroundId->setProperty( "gmMeshGLParamInt", MeshGLParams::LABEL_BACKGROUND_ID );
 
     actionMax_Number_of_vertices_for_hole_filling->setProperty(    "gmMeshGLParamInt", MeshGLParams::MAX_VERTICES_HOLE_FILLING);
 	// INT: Setup parameter group of menu items

@@ -40,8 +40,9 @@ in struct grVertex {
 	float vertexFuncVal;
 	vec2  vertexFuncValTexCoord;
 	// +++ Labels
-	float labelNr;       // corresponds to vLabelID
-	float flagNoLabel; 
+	float labelNr;             // corresponds to vLabelID
+	float flagNoLabel;         // 1.0 when vertex has no label (unlabeled or background)
+	float flagLabelBackground; // 1.0 when vertex is explicitly background-labeled
 } oVertex[];
 
 out grVertex gVertex;
@@ -91,7 +92,8 @@ void main(void) {
 		gVertex.vertexFuncValTexCoord = oVertex[i].vertexFuncValTexCoord;
 		// +++ Labels
 		gVertex.labelNr               = oVertex[i].labelNr;
-		gVertex.flagNoLabel           = oVertex[i].flagNoLabel; 
+		gVertex.flagNoLabel           = oVertex[i].flagNoLabel;
+		gVertex.flagLabelBackground   = oVertex[i].flagLabelBackground;
 		// +++ Edge/Wireframe Rendering 
 		if( i==0 ) {
 			vEdgeDist = vec3( area/length(v0), 0.0, 0.0 );

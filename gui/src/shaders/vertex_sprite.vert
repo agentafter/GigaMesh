@@ -43,8 +43,9 @@ out struct grVertex {
 	float vertexFuncVal;
 	vec2  vertexFuncValTexCoord;
 	// +++ Labels
-	float labelNr;       // corresponds to vLabelID
-	float flagNoLabel; 
+	float labelNr;             // corresponds to vLabelID
+	float flagNoLabel;         // 1.0 when vertex has no label (unlabeled or background)
+	float flagLabelBackground; // 1.0 when vertex is explicitly background-labeled
 } oVertex;
 // -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -100,11 +101,9 @@ void main(void) {
 	gl_PointSize = uPointSizeBase * ( 1.0 - ( (gl_Position.z / gl_Position.w) + 1.0 )/2.0 ) + uPointSizeBaseMinimal;
 	gl_Position.z += uPointShiftViewZ;
 
-	// EXAMPLE for passing on flags:
-	// See MeshGL::vboPrepareVerticesStriped() for the values used to pass the flags.
-	if( bool( uint(vFlags) & 0x08u )  ) {
-		oVertex.flagNoLabel = 1.0;
-	} else {
-		oVertex.flagNoLabel = 0.0;
-	}
+	// Decode flag bits using float arithmetic (portable across GLSL implementations).
+	// Bit 3 (=8):  !isLabled() — unlabeled or background
+	// Bit 4 (=16): isLabelBackGround() — explicitly background-labeled
+	oVertex.flagNoLabel         = (mod(floor(vFlags / 8.0),  2.0) >= 1.0) ? 1.0 : 0.0;
+	oVertex.flagLabelBackground = (mod(floor(vFlags / 16.0), 2.0) >= 1.0) ? 1.0 : 0.0;
 }

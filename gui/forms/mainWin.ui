@@ -205,6 +205,7 @@
     <addaction name="actionLabelFuncValMaxima"/>
     <addaction name="separator"/>
     <addaction name="actionLabelColorShift"/>
+    <addaction name="actionLabelBackgroundId"/>
     <addaction name="actionGet_Label_Info"/>
     <addaction name="separator"/>
     <addaction name="actionCreateAnnotation"/>
@@ -3014,6 +3015,14 @@ p, li { white-space: pre-wrap; }
   <action name="actionLabelColorShift">
    <property name="text">
     <string>Label Rendering: Color Shift</string>
+   </property>
+   <property name="gmMeshGLParInt" stdset="0">
+    <number>-1</number>
+   </property>
+  </action>
+  <action name="actionLabelBackgroundId">
+   <property name="text">
+    <string>Label Rendering: Background Label ID (-1 = off)</string>
    </property>
    <property name="gmMeshGLParInt" stdset="0">
     <number>-1</number>

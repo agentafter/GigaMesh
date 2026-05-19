@@ -108,6 +108,7 @@ class MeshGLParams {
 			TRANSPARENCY_BUFFER_METHOD,    //!< How fragments should be buffered: 0 = K+ Buffer, 1 = A-Buffer
 			DEFAULT_FRAMEBUFFER_ID,        //!< The default framebuffer for rendering
             MAX_VERTICES_HOLE_FILLING,     //!< mesh Cleaning parameter, Maximum Number of vertices for hole filling
+			LABEL_BACKGROUND_ID,           //!< Label number always rendered with No Label Color (-1 = disabled).
 			PARAMS_INT_COUNT               //!< Number of integer paramters.
 		};
 		// Parameters (double)

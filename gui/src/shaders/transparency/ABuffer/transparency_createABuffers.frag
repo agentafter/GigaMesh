@@ -17,8 +17,9 @@ in struct grVertex {
 	float vertexFuncVal;
 	vec2  vertexFuncValTexCoord;
 	// +++ Labels
-	float labelNr;       // corresponds to vLabelID
-	float flagNoLabel;
+	float labelNr;             // corresponds to vLabelID
+	float flagNoLabel;         // 1.0 when vertex has no label (unlabeled or background)
+	float flagLabelBackground; // 1.0 when vertex is explicitly background-labeled
 } gVertex;
 
 //flat in float labelNr;
@@ -44,6 +45,7 @@ uniform float     uLabelCountOffset     =  0.0;                          // Offs
 uniform vec4      uLabelBorderColor     = vec4( 0.25, 0.25, 0.25, 1.0 ); // Color for connected components tagged as background
 uniform vec4      uLabelBackgroundColor = vec4( 0.25, 0.25, 0.25, 1.0 ); // Color for connected components tagged as background
 uniform vec4      uLabelNoColor         = vec4( 0.61, 0.09, 0.09, 1.0 ); // Color for areas not labeled - i.e. not being part of a connect component nor the backgroud
+uniform int       uLabelBackgroundID    = -1;                              // Label number always rendered with No Label Color (-1 = disabled)
 uniform vec4      uLabelSingleColor     = vec4( 0.00, 0.00, 0.00, 1.0 ); // Show all labels with the same color (instead of using sampler2D uLabelTexMap).
 uniform bool      uLabelSameColor       = false;                         // Show all labels with the same color (instead of using sampler2D uLabelTexMap).
 
@@ -149,9 +151,13 @@ vec4 getLabelColor(vec3 barycenter, vec3 labels)
 		// Shade intermediate area between different labels (or background vertices) differently:
 		outputColor = uLabelBorderColor;
 	}
+	else if( labelNr < 1.0 )     // label 0 = no label / background (vertex.cpp:1035)
+	{
+		outputColor = uLabelNoColor;
+	}
 	else
 	{
-		// Shade labeled areas:
+		// Shade labeled areas (label IDs 1+):
 		float labelNrShifted = round(labelNr) + uLabelCountOffset;
 		float labelIDMod = mod(labelNrShifted , uLabelColorCount);
 		float labelTexCoordMap = (512.0 - 11.0*uLabelTexMapSel+5.0)/512.0; // Texture map with color ramps is 512x512 pixel and each colorramp is 11 pixel wide (in y).
@@ -161,10 +167,15 @@ vec4 getLabelColor(vec3 barycenter, vec3 labels)
 		outputColor  =  texColor;
 	}
 
-	// Shading color if the fragment is part of the background label:
-	if( false )
+	// Background-labeled vertices (SelMVerts to Background): render with No Label Color.
+	if( gVertex.flagLabelBackground > 0.0 )
 	{
-		outputColor = uLabelBackgroundColor;
+		outputColor = uLabelNoColor;
+	}
+	// User-designated background label by ID: always render that label with No Label Color.
+	if( uLabelBackgroundID >= 0 && int(round(labelNr)) == uLabelBackgroundID )
+	{
+		outputColor = uLabelNoColor;
 	}
 	// Shade faces not being a label with a given color:
 	if( gVertex.flagNoLabel > 0.0 )

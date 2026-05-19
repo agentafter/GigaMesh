@@ -55,8 +55,9 @@ in struct grVertex {
         float vertexFuncVal;
         vec2  vertexFuncValTexCoord;
         // +++ Labels
-        float labelNr;       // corresponds to vLabelID
-        float flagNoLabel;
+        float labelNr;             // corresponds to vLabelID
+        float flagNoLabel;         // 1.0 when vertex has no label (unlabeled or background)
+        float flagLabelBackground; // 1.0 when vertex is explicitly background-labeled
 } gVertex;
 
 flat in uint gInvertColor;

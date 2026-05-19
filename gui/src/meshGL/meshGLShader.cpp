@@ -838,6 +838,11 @@ void MeshGLShader::shaderSetLocationVertexSprites( QOpenGLShaderProgram* rShader
 	rShaderProgram->setUniformValue( "uLabelNoColor", somemColorSetting[0], somemColorSetting[1], somemColorSetting[2], somemColorSetting[3] );
 	mRenderColors->getColorSettings( MeshGLColors::COLOR_LABEL_BACKGROUND, somemColorSetting );
 	rShaderProgram->setUniformValue( "uLabelBackgroundColor", somemColorSetting[0], somemColorSetting[1], somemColorSetting[2], somemColorSetting[3] );
+	{
+		int labelBackgroundID;
+		getParamIntMeshGL( MeshGLParams::LABEL_BACKGROUND_ID, &labelBackgroundID );
+		rShaderProgram->setUniformValue( "uLabelBackgroundID", labelBackgroundID );
+	}
 	PRINT_OPENGL_ERROR( "Shader setUniformValue" );
 
 	// Set parameters of the color mapping.
@@ -960,6 +965,11 @@ void MeshGLShader::shaderSetMeshBasicFuncVals(QOpenGLShaderProgram *rShaderProgr
 	rShaderProgram->setUniformValue( "uLabelNoColor", somemColorSetting[0], somemColorSetting[1], somemColorSetting[2], somemColorSetting[3] );
 	mRenderColors->getColorSettings( MeshGLColors::COLOR_LABEL_BACKGROUND, somemColorSetting );
 	rShaderProgram->setUniformValue( "uLabelBackgroundColor", somemColorSetting[0], somemColorSetting[1], somemColorSetting[2], somemColorSetting[3] );
+	{
+		int labelBackgroundID;
+		getParamIntMeshGL( MeshGLParams::LABEL_BACKGROUND_ID, &labelBackgroundID );
+		rShaderProgram->setUniformValue( "uLabelBackgroundID", labelBackgroundID );
+	}
 	PRINT_OPENGL_ERROR( "Shader setUniformValue" );
 
 	// Set parameters of the color mapping.
@@ -1838,6 +1848,11 @@ void MeshGLShader::vboPaintFacesIndexed() {
 	mShaderDatumObjects->setUniformValue( "uLabelNoColor", somemColorSetting[0], somemColorSetting[1], somemColorSetting[2], somemColorSetting[3] );
 	mRenderColors->getColorSettings( MeshGLColors::COLOR_LABEL_BACKGROUND, somemColorSetting );
 	mShaderDatumObjects->setUniformValue( "uLabelBackgroundColor", somemColorSetting[0], somemColorSetting[1], somemColorSetting[2], somemColorSetting[3] );
+	{
+		int labelBackgroundID;
+		getParamIntMeshGL( MeshGLParams::LABEL_BACKGROUND_ID, &labelBackgroundID );
+		mShaderDatumObjects->setUniformValue( "uLabelBackgroundID", labelBackgroundID );
+	}
 	PRINT_OPENGL_ERROR( "Shader setUniformValue" );
 
 	// Set parameters of the color mapping.
@@ -2224,6 +2239,11 @@ void MeshGLShader::vboPaintFuncVal()
 	meshShader->setUniformValue( "uLabelNoColor", somemColorSetting[0], somemColorSetting[1], somemColorSetting[2], somemColorSetting[3] );
 	mRenderColors->getColorSettings( MeshGLColors::COLOR_LABEL_BACKGROUND, somemColorSetting );
 	meshShader->setUniformValue( "uLabelBackgroundColor", somemColorSetting[0], somemColorSetting[1], somemColorSetting[2], somemColorSetting[3] );
+	{
+		int labelBackgroundID;
+		getParamIntMeshGL( MeshGLParams::LABEL_BACKGROUND_ID, &labelBackgroundID );
+		meshShader->setUniformValue( "uLabelBackgroundID", labelBackgroundID );
+	}
 	PRINT_OPENGL_ERROR( "Shader setUniformValue" );
 
 	// Set parameters of the color mapping.
@@ -2925,6 +2945,11 @@ void MeshGLShader::vboPaintPolylines() {
 	mShaderPolyLines->setUniformValue( "uLabelNoColor", somemColorSetting[0], somemColorSetting[1], somemColorSetting[2], somemColorSetting[3] );
 	mRenderColors->getColorSettings( MeshGLColors::COLOR_LABEL_BACKGROUND, somemColorSetting );
 	mShaderPolyLines->setUniformValue( "uLabelBackgroundColor", somemColorSetting[0], somemColorSetting[1], somemColorSetting[2], somemColorSetting[3] );
+	{
+		int labelBackgroundID;
+		getParamIntMeshGL( MeshGLParams::LABEL_BACKGROUND_ID, &labelBackgroundID );
+		mShaderPolyLines->setUniformValue( "uLabelBackgroundID", labelBackgroundID );
+	}
 	PRINT_OPENGL_ERROR( "Shader setUniformValue" );
 
 	// Set parameters of the color mapping.
@@ -4969,6 +4994,11 @@ void MeshGLShader::vboPaintPointcloud(eTexMapType rRenderColor, bool limitPoints
 	mShaderPointcloud->setUniformValue( "uLabelNoColor", somemColorSetting[0], somemColorSetting[1], somemColorSetting[2], somemColorSetting[3] );
 	mRenderColors->getColorSettings( MeshGLColors::COLOR_LABEL_BACKGROUND, somemColorSetting );
 	mShaderPointcloud->setUniformValue( "uLabelBackgroundColor", somemColorSetting[0], somemColorSetting[1], somemColorSetting[2], somemColorSetting[3] );
+	{
+		int labelBackgroundID;
+		getParamIntMeshGL( MeshGLParams::LABEL_BACKGROUND_ID, &labelBackgroundID );
+		mShaderPointcloud->setUniformValue( "uLabelBackgroundID", labelBackgroundID );
+	}
 	PRINT_OPENGL_ERROR( "Shader setUniformValue" );
 
 	// Set parameters of the color mapping.

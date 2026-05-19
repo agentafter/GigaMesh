@@ -3439,7 +3439,7 @@ bool MeshGL::vboPrepareVerticesStripedFetchVertex( Vertex* rVertex, grVertexStri
 				noError = false;
 		}
 		rWriteTo->mFuncVal = funcVal;  //! \todo change from GLfloat to GLdouble.
-		uint64_t labelID;
+		uint64_t labelID = 0; // initialize to 0: background/no-label sentinel
         rVertex->getLabel( labelID ); // No ERROR check, here as getLabels also returns false, when no label is set!
 		rWriteTo->mLabelID = static_cast<GLfloat>(labelID);  // This is INTENTIONAL - to determine faces along the border of a label!
 		// Flags -- these should be UINT, but thanks to fixed normalization this does not work -- see: http://qt-project.org/forums/viewthread/38929
@@ -3455,6 +3455,9 @@ bool MeshGL::vboPrepareVerticesStripedFetchVertex( Vertex* rVertex, grVertexStri
 		}
 		if( !rVertex->isLabled() ) {
 				rWriteTo->mFlags += 8.0f;
+		}
+		if( rVertex->isLabelBackGround() ) {
+				rWriteTo->mFlags += 16.0f; // bit 4: background-labeled (subset of !isLabled)
 		}
 
 		return noError;

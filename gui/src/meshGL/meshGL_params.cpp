@@ -71,6 +71,7 @@ MeshGLParams::MeshGLParams()
     mParamInt[TRANSPARENCY_BUFFER_METHOD]   = 2;
 	mParamInt[DEFAULT_FRAMEBUFFER_ID]       = 0;
     mParamInt[MAX_VERTICES_HOLE_FILLING]       = 0;
+    mParamInt[LABEL_BACKGROUND_ID]            = -1;
 
 	// Initalize float parameters:
 	mParamFlt[DATUM_SPHERE_TRANS]    =  0.9;
