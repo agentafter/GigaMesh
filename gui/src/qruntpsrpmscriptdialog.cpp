@@ -106,7 +106,7 @@ void QRunTpsRpmScriptDialog::meshCoordinatesOriginFileSelectionPushButtonRelease
 														"CSV file used for "
 														"TPS-RPM transformation"),
 	                                                    m_lastOpenedFileDirectory,
-														tr("CSV files (*.csv *.mat)" ));
+														tr("CSV files (*.csv *.mat)" ), nullptr, QFileDialog::DontUseNativeDialog);
 
 	if(!coordinatesOriginFileName.isEmpty())
 	{
@@ -142,7 +142,7 @@ void QRunTpsRpmScriptDialog::primitiveCoordinatesOriginFileSelectionPushButtonRe
 														"CSV file used for "
 														"TPS-RPM transformation"),
 	                                                    m_lastOpenedFileDirectory,
-														tr("CSV files (*.csv *.mat)"));
+														tr("CSV files (*.csv *.mat)"), nullptr, QFileDialog::DontUseNativeDialog);
 
 	if(!positionsOriginFileName.isEmpty())
 	{
@@ -178,7 +178,7 @@ void QRunTpsRpmScriptDialog::primitiveCoordinatesTargetFileSelectionPushButtonRe
 	                                                    "CSV file used for "
 														"TPS-RPM transformation"),
 	                                                    m_lastOpenedFileDirectory,
-														tr("CSV files (*.csv *.mat)"));
+														tr("CSV files (*.csv *.mat)"), nullptr, QFileDialog::DontUseNativeDialog);
 
 	if(!positionsTargetFileName.isEmpty())
 	{
@@ -213,7 +213,7 @@ void QRunTpsRpmScriptDialog::meshDataOutputFileSelectionPushButtonReleased()
 	                                                    "CSV file of "
 														"TPS-RPM transformation"),
 	                                                    m_lastOpenedFileDirectory,
-														tr("CSV files (*.csv *.mat)"));
+														tr("CSV files (*.csv *.mat)"), nullptr, QFileDialog::DontUseNativeDialog);
 
 	if(!outputFileName.isEmpty())
 	{

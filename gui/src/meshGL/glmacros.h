@@ -22,6 +22,11 @@
 #ifndef GLMACROS_H
 #define GLMACROS_H
 
+// PRINT_OPENGL_ERROR calls glGetError(), which forces a driver round-trip / GPU pipeline sync.
+// It is peppered hundreds of times through the per-frame draw path, so leaving it always-on
+// serializes CPU and GPU and destroys rotation FPS. Compile it in only when explicitly
+// debugging OpenGL via -DGIGAMESH_OPENGL_DEBUG; otherwise it is a no-op.
+#ifdef GIGAMESH_OPENGL_DEBUG
 #define PRINT_OPENGL_ERROR( functionName ) { \
 	GLenum errorNr = glGetError(); \
 	if( errorNr != GL_NO_ERROR ) { \
@@ -48,6 +53,9 @@
 		std::cerr << __PRETTY_FUNCTION__ << " Line: " << __LINE__ << " OpenGL Error(" << errorNr << "): " << errString << " in " << (functionName) << "!" << std::endl; \
 	} \
 }
+#else
+#define PRINT_OPENGL_ERROR( functionName ) do {} while(0)
+#endif
 // DEPRECATED use of gluErrorString: cerr << __PRETTY_FUNCTION__ << " Line: " << __LINE__ << " OpenGL Error(" << errorNr << "): " << gluErrorString( errorNr ) << " in " << functionName << "!" << endl;
 
 /*

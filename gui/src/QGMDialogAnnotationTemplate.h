@@ -24,11 +24,12 @@ public:
 
     QJsonArray templatejson;
 
+    void saveAsJSON(QString templatename);
+
+public slots:
     void reloadTable();
 
     void addRow();
-
-    void saveAsJSON(QString templatename);
 };
 
 

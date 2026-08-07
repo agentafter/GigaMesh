@@ -181,7 +181,8 @@ void QGMDialogImportAnnotations::importAnnotations(){
 void QGMDialogImportAnnotations::chooseFile()
 {
     QString directory = QFileDialog::getOpenFileName(this,
-                                                          tr("Find Files"), QDir::currentPath());
+                                                          tr("Find Files"), QDir::currentPath(),
+                                                          QString(), nullptr, QFileDialog::DontUseNativeDialog);
 
     if (!directory.isEmpty()) {
         this->filepath->setText(directory);

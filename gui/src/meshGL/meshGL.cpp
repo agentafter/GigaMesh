@@ -1707,7 +1707,6 @@ Vertex* MeshGL::getVertexAt( int xPixel, int yPixel ) {
 
 //! Select a visible Face at the given position within the Viewport.
 Face* MeshGL::getFaceAt( int rPixelX, int rPixelY, Vector3D* rPointIntersect ) {
-		float timeStart = clock();
 		// Fetch value from Z-Buffer entry:
 		GLfloat zDepth;
 		glReadPixels( rPixelX, rPixelY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &zDepth );
@@ -1719,7 +1718,6 @@ Face* MeshGL::getFaceAt( int rPixelX, int rPixelY, Vector3D* rPointIntersect ) {
 		Vector3D selectBeamTop;
 		Vector3D selectBeamBot;
 		getRayWorld( rPixelX, rPixelY, &selectBeamTop, &selectBeamBot );
-        cout << "[MeshGL::" << __FUNCTION__ << "] time using depth buffer: " << ( clock() - timeStart ) / CLOCKS_PER_SEC << " seconds."  << endl;
 		return getFaceAt( selectBeamTop, selectBeamBot, vecPointSel, rPointIntersect );
 }
 
@@ -1751,7 +1749,9 @@ Face* MeshGL::getFaceAt(
 		}
 	}
 	if( faceSelectedCtr == 0 ) {
+#ifdef DEBUG_SHOW_ALL_METHOD_CALLS
         cout << "[MeshGL::" << __FUNCTION__ << "] No face selected."  << endl;
+#endif
 	} else if( faceSelectedCtr > 1 ) {
         cerr << "[MeshGL::" << __FUNCTION__ << "] ERROR: More than one faces selected (" << faceSelectedCtr << ") -- the last was choosen!"  << endl;
 	}

@@ -21,10 +21,10 @@ QGMDialogAnnotationTemplate::QGMDialogAnnotationTemplate(QString templatepath, Q
     for(auto && i : templatejson){
         this->templateCBox->addItem(i.toObject().value("name").toString());
     }
-    connect(this->templateCBox,SIGNAL(currentIndexChanged(const QString&)),
-            this,SLOT(reloadTable));
-    connect(this->newRowButton,SIGNAL(currentIndexChanged(const QString&)),
-            this,SLOT(addRow));
+    connect(this->templateCBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &QGMDialogAnnotationTemplate::reloadTable);
+    connect(this->newRowButton, &QPushButton::clicked,
+            this, &QGMDialogAnnotationTemplate::addRow);
     this->reloadTable();
     setWindowIcon( QIcon( _GIGAMESH_LOGO_ ) );
     this->show();

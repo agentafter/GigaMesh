@@ -23,6 +23,8 @@
 #include "meshwidget.h"
 #include "meshGL/glmacros.h"
 
+#include <algorithm>
+
 // generic Qt includes:
 #include <QCoreApplication>
 #include <QEventLoop>
@@ -6188,6 +6190,31 @@ void MeshWidget::paintGL() {
 	//! Setup Alpha blendig for OpenGL.
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 	glEnable( GL_BLEND );
+
+	//! Push the current Annotation bounding boxes down to the GL layer, which draws them as part of glPaint().
+	{
+		std::vector<AnnotationBBoxGL> annoBoxes;
+		constexpr double cMinBoxThickness = 0.5; //!< Minimum extent along an axis, so flat (e.g. 2D-only) annotations remain visible as a thin slab.
+		for( Annotation* anno : annotationlist ) {
+			if( anno == nullptr || anno->isempty ) {
+				continue;
+			}
+			AnnotationBBoxGL box;
+			box.centerX = ( anno->minX + anno->maxX ) / 2.0;
+			box.centerY = ( anno->minY + anno->maxY ) / 2.0;
+			box.centerZ = ( anno->minZ + anno->maxZ ) / 2.0;
+			box.sizeX = std::max( anno->maxX - anno->minX, cMinBoxThickness );
+			box.sizeY = std::max( anno->maxY - anno->minY, cMinBoxThickness );
+			box.sizeZ = std::max( anno->maxZ - anno->minZ, cMinBoxThickness );
+			box.colorR = static_cast<float>( anno->bboxColor.redF() );
+			box.colorG = static_cast<float>( anno->bboxColor.greenF() );
+			box.colorB = static_cast<float>( anno->bboxColor.blueF() );
+			box.colorA = static_cast<float>( anno->bboxColor.alphaF() );
+			annoBoxes.push_back( box );
+		}
+		mMeshVisual->setAnnotationBBoxes( annoBoxes );
+	}
+
     //! Draw the Mesh.
     mMeshVisual->glPaint();
 
@@ -7110,11 +7137,12 @@ void MeshWidget::mouseMoveEvent( QMouseEvent* rEvent ) {
 	GLfloat dy = GLfloat( rEvent->position().y()*scaleFactor - mLastPos.y() ) / 2.0;
 
 	mLastPos = (rEvent->position() * scaleFactor).toPoint();
-    Vector3D clickPos;
-    mMeshVisual->getWorldPointOnMesh( qRound(rEvent->position().x()), qRound(rEvent->position().y()), &clickPos );
-    //QToolTip::showText(rEvent->globalPosition().toPoint(),QString::fromStdString("My cool tooltip! "+std::to_string(clickPos.getX())+" - "+std::to_string(clickPos.getY())+" - "+std::to_string(clickPos.getZ())+" - "+std::to_string(rEvent->x())+" - "+std::to_string(dx)+" - "+std::to_string(rEvent->y())+" "+std::to_string(dy)+" - "+std::to_string(mLastPos.x())));
-    double ylength=this->getMesh()->getMaxY()-this->getMesh()->getMinY();
-    if(!annotationlist.empty()){
+    // Annotation tooltip/highlight when mesh is not rotated
+    if(!annotationlist.empty() && rEvent->buttons() == Qt::NoButton){
+        // TODO: check how to improve tooltip display and calculations
+        Vector3D clickPos;
+        mMeshVisual->getWorldPointOnMesh( qRound(rEvent->position().x()), qRound(rEvent->position().y()), &clickPos );
+        double ylength=this->getMesh()->getMaxY()-this->getMesh()->getMinY();
         bool finished=false;
         if(!mLastAnnotation->isempty){
             if(mLastAnnotation->pointInAnnotationBBOX3D(clickPos.getX(),ylength-clickPos.getY(),clickPos.getZ())){
@@ -7632,6 +7660,21 @@ bool MeshWidget::userSelectByMouseClick(
                 QPoint rPoint,
                 QFlags<Qt::MouseButton> rMouseButton
 ) {
+	if( mMeshVisual == nullptr ) {
+		return( false );
+	}
+
+	// Qt6: the widget's default framebuffer is multisampled (setSamples(4)), so the depth-buffer
+	// glReadPixels(GL_DEPTH_COMPONENT) in the pick path (MeshGL::getVertexAt/getFaceAt) cannot read
+	// it and returns a far/empty depth -> the unprojected point lands behind the mesh and the
+	// backside vertex gets selected. Render one frame into a single-sample OffscreenBuffer (the same
+	// recipe the screenshot code uses) and read depth from there, so picking hits the true front
+	// surface. The multisampled display is unaffected.
+	makeCurrent();
+	OffscreenBuffer pickBuffer( context(), mFramebufferWidth, mFramebufferHeight );
+	mScreenshotFboId = static_cast<int>( pickBuffer.getFboID() );
+	paintGL();                       // renders the scene into the single-sample FBO; leaves it bound
+
 	bool retVal = false;
 	switch( rMouseButton ) {
 		case Qt::LeftButton:
@@ -7641,6 +7684,8 @@ bool MeshWidget::userSelectByMouseClick(
 			retVal = userSelectAtMouseRight( rPoint );
 			break;
 	}
+
+	mScreenshotFboId = 0;            // pickBuffer dtor restores the previously-bound FBO
 	return( retVal );
 }
 

@@ -304,12 +304,12 @@ void NormalSphereSelectionRenderWidget::mousePressEvent(QMouseEvent* event)
 {
 	if(event->button() == Qt::MouseButton::LeftButton)
 	{
-		mArcBall.beginDrag( getScreenPosNormalized(event->x(), event->y() , mScreenWidth, mScreenHeight ));
+		mArcBall.beginDrag( getScreenPosNormalized(static_cast<int>(event->position().x()), static_cast<int>(event->position().y()) , mScreenWidth, mScreenHeight ));
 		update();
 	}
 	else if(event->button() == Qt::MouseButton::RightButton && !mScaleNormals)
 	{
-		selectAt(event->x(), event->y());
+		selectAt(static_cast<int>(event->position().x()), static_cast<int>(event->position().y()));
 		update();
 	}
 }
@@ -318,7 +318,7 @@ void NormalSphereSelectionRenderWidget::mouseMoveEvent(QMouseEvent* event)
 {
 	if(event->buttons() & Qt::LeftButton)
 	{
-		mArcBall.drag( getScreenPosNormalized(event->x(), event->y() , mScreenWidth, mScreenHeight ) );
+		mArcBall.drag( getScreenPosNormalized(static_cast<int>(event->position().x()), static_cast<int>(event->position().y()) , mScreenWidth, mScreenHeight ) );
 
 		emit rotationChanged(mArcBall.getTransformationQuat());
 
@@ -326,7 +326,7 @@ void NormalSphereSelectionRenderWidget::mouseMoveEvent(QMouseEvent* event)
 	}
 	else if(event->buttons() & Qt::RightButton && !mScaleNormals)
 	{
-		selectAt(event->x(), event->y());
+		selectAt(static_cast<int>(event->position().x()), static_cast<int>(event->position().y()));
 		update();
 	}
 }
@@ -428,8 +428,9 @@ void NormalSphereSelectionRenderWidget::initializeGL()
 void NormalSphereSelectionRenderWidget::resizeGL(int w, int h)
 {
 	assert(glGetError() == GL_NO_ERROR);
-	glViewport(0,0,w,h);
-	mScreenWidth = w;
+	const qreal dpr = devicePixelRatioF();
+	glViewport(0, 0, qRound(w * dpr), qRound(h * dpr));	// full device-pixel framebuffer (HiDPI-correct)
+	mScreenWidth = w;	// keep logical: pick uses logical event->position()
 	mScreenHeight = h;
 	assert(glGetError() == GL_NO_ERROR);
 

@@ -118,7 +118,7 @@ void ExternalProgramsDialog::pythonPathChanged(const QString& string)
 
 void choosePath(const QString& header, QLineEdit* lineEditElement, QWidget* parent)
 {
-	auto fileName = QFileDialog::getOpenFileName(parent, header);
+	auto fileName = QFileDialog::getOpenFileName(parent, header, QString(), QString(), nullptr, QFileDialog::DontUseNativeDialog);
 
 	if(!fileName.isNull())
 	{

@@ -60,7 +60,7 @@ void QGMDialogExportAnnotations::exportAnnotations(){
         for(const std::string& fieldname:this->fieldnames){
             titlestring+="["+fieldname+"] ";
         }
-        outpath=QFileDialog::getExistingDirectory(this,tr("Choose save directory for annotations",".",QFileDialog::ShowDirsOnly))+"/";
+        outpath=QFileDialog::getExistingDirectory(this,tr("Choose save directory for annotations"),".",QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog)+"/";
         if(outpath==nullptr || outpath==""){
             return;
         }

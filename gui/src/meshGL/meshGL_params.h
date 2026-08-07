@@ -22,6 +22,14 @@
 #ifndef MESHGL_PARAMS_H
 #define MESHGL_PARAMS_H
 
+//! Plain data describing a single 3D wireframe box to be drawn as an overlay,
+//! e.g. the bounding box of an Annotation. Center/size are in mesh/world coordinates.
+struct AnnotationBBoxGL {
+	double centerX = 0.0, centerY = 0.0, centerZ = 0.0;
+	double sizeX   = 0.0, sizeY   = 0.0, sizeZ   = 0.0;
+	float  colorR  = 1.0f, colorG = 0.75f, colorB = 0.0f, colorA = 1.0f;
+};
+
 class MeshGLParams {
 	public:
 		MeshGLParams();

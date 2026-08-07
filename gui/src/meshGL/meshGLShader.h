@@ -52,6 +52,9 @@ public:
 	virtual void glPaintDepth( const QMatrix4x4 &rTransformMat );
 	virtual void glPaintFrontalLightPerVertex( const QMatrix4x4 &rTransformMat, GLint rXResolution, GLint rYResolution, GLuint rDepthTexture, GLfloat rZTolerance, GLint rFirstVertIdx );
 
+	// Annotation bounding boxes: MeshWidget has Annotation list and gives description of boxes to draw instead of storing annotation here.
+	void setAnnotationBBoxes( const std::vector<AnnotationBBoxGL>& rBoxes );
+
 private:
 	// Parameters for rendering the fog using shaders.
 	enum eGLSLFogFunctions {
@@ -78,6 +81,7 @@ private:
 
 	// Paint
 	void vboPaintBoundingBox();
+	void vboPaintAnnotationBoxes();
 	void vboPaintVertices();
 	void vboPaintFaces();
 	void vboPaintFacesIndexed();
@@ -150,6 +154,8 @@ private:
 	TexturedMeshRenderer mTexturedMeshRenderer;
 
 	ShaderManager* mShaderManager = nullptr;
+
+	std::vector<AnnotationBBoxGL> mAnnotationBBoxes; //!< Boxes to draw as overlay, set via setAnnotationBBoxes().
 };
 
 #endif // MESHGLSHADER_H

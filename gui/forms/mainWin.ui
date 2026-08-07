@@ -215,6 +215,7 @@
     <addaction name="actionMarkAnnotation"/>
     <addaction name="actionChoose_Annotation_Template"/>
     <addaction name="actionEdit_Annotation_Templates"/>
+    <addaction name="actionViewAnnotationBBoxes"/>
     <addaction name="separator"/>
     <addaction name="actionLabelKMeansVertPos"/>
    </widget>
@@ -4875,6 +4876,20 @@ The latter will be shown, when the processing has finished.</string>
   <action name="actionChoose_Annotation_Template">
    <property name="text">
     <string>Choose Annotation Template</string>
+   </property>
+  </action>
+  <action name="actionViewAnnotationBBoxes">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Annotation &amp;Bounding Boxes</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the 3D bounding box of each loaded annotation</string>
+   </property>
+   <property name="gmMeshWidgetFlag" stdset="0">
+    <number>-1</number>
    </property>
   </action>
  </widget>

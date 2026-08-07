@@ -98,7 +98,7 @@ void FileSelectWidget::selectFile()
 	}
 
 	auto fileName = QFileDialog::getOpenFileName(this, tr("select Texture for") + " " + mFileNameLabel->text(),
-	                                             "",tr("Images") + "(" + sSupportedImageFormats + ")");
+	                                             "",tr("Images") + "(" + sSupportedImageFormats + ")", nullptr, QFileDialog::DontUseNativeDialog);
 
 	if(!fileName.isNull())
 	{

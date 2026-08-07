@@ -491,6 +491,7 @@ void QGMMainWindow::initMeshWidgetSignals() {
 	actionScreenshotDPISuffix->setProperty(       "gmMeshWidgetFlag",       MeshWidgetParams::SCREENSHOT_FILENAME_WITH_DPI );
 	actionReplaceTransparencyBgColor->setProperty("gmMeshWidgetFlag",       MeshWidgetParams::SCREENSHOT_PNG_BACKGROUND_OPAQUE);
 	actionDisplay_as_pointcloud_when_moving->setProperty( "gmMeshWidgetFlag", MeshWidgetParams::ENABLE_SHOW_MESH_REDUCED);
+	actionViewAnnotationBBoxes->setProperty(      "gmMeshWidgetFlag",       MeshWidgetParams::SHOW_ANNOTATION_BBOXES );
 
 	mMeshWidgetFlag = new QActionGroup( this );
 	for(QAction*& currAction : allActions) {
@@ -2072,7 +2073,13 @@ void QGMMainWindow::createAnnotationWindowFromTemplate(){
 }
 
 void QGMMainWindow::createAnnotationTemplateWindow(){
-    QGMDialogAnnotationTemplate("C:/Users/timo.homburg/git/GigaMesh/cmake-build-debug/annotemplates.json", this).exec();
+    const QString templatePath = QFileDialog::getOpenFileName(
+                this, tr("Open Annotation Template"), QString(),
+                tr("Annotation Template (*.json);;All Files (*)") );
+    if( templatePath.isEmpty() ) {
+        return;
+    }
+    QGMDialogAnnotationTemplate( templatePath, this ).exec();
 }
 
 //! Sets menu items according to the flags of MeshGLParams::mParamInt

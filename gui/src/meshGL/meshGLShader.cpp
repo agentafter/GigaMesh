@@ -322,6 +322,10 @@ void MeshGLShader::glPaint() {
 	//! *) Paint the bounding box of the Mesh.
 	vboPaintBoundingBox();
 
+	//! ----------------------------------------------------------------------------------------
+	//! *) Paint the bounding boxes of loaded Annotations, when requested.
+	vboPaintAnnotationBoxes();
+
 	//! 3.) Draw other stuff:
 
 	//! *) Polygonal lines - normals per label.
@@ -1124,6 +1128,105 @@ void MeshGLShader::vboPaintBoundingBox() {
 		mShaderBoundingBox->setUniformValue( "uOffSet", bbCenter.getX()-bbSize.getX()/2.0, bbCenter.getY()+bbSize.getY()/2.0, bbCenter.getZ() );
 		glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );
 		mShaderBoundingBox->setUniformValue( "uOffSet", bbCenter.getX()-bbSize.getX()/2.0, bbCenter.getY()-bbSize.getY()/2.0, bbCenter.getZ() );
+		glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );
+	}
+
+	PRINT_OPENGL_ERROR( "glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );" );
+	mVertBufObjs[VBUFF_CUBE]->release();
+
+	mShaderBoundingBox->release();
+
+	glBindVertexArray( 0 );
+	PRINT_OPENGL_ERROR( "glBindVertexArray( 0 )" );
+}
+
+//==============================================================================================================================================================
+
+//! Sets the boxes to be drawn by vboPaintAnnotationBoxes(). Called by MeshWidget, which owns the Annotation list.
+void MeshGLShader::setAnnotationBBoxes( const std::vector<AnnotationBBoxGL>& rBoxes ) {
+	mAnnotationBBoxes = rBoxes;
+}
+
+//! Draw the 3D bounding box of each loaded Annotation as a wireframe, when the related flag is set.
+//! Re-uses the same unit-cube VBO and BOUNDING_BOX shader as vboPaintBoundingBox(), but once per Annotation
+//! with a per-box center/size/color instead of the Mesh's own global bounding box.
+void MeshGLShader::vboPaintAnnotationBoxes() {
+
+	bool drawAnnotationBBoxes;
+	mWidgetParams->getParamFlagMeshWidget( MeshWidgetParams::SHOW_ANNOTATION_BBOXES, &drawAnnotationBBoxes );
+	if( !drawAnnotationBBoxes || mAnnotationBBoxes.empty() ) {
+		return;
+	}
+
+	const auto mShaderBoundingBox = mShaderManager->getShader(ShaderManager::ShaderName::BOUNDING_BOX);
+	if(mShaderBoundingBox == nullptr)
+		return;
+
+	PRINT_OPENGL_ERROR( "OLD ERROR" );
+
+	if( !mVertBufObjs[VBUFF_CUBE]->isCreated() ) {
+		cerr << "[MeshWidget::" << __FUNCTION__ << "] ERROR: VBUFF_CUBE was not created!" << endl;
+		return;
+	}
+
+	PglBindVertexArray glBindVertexArray = reinterpret_cast<PglBindVertexArray>(mOpenGLContext->getProcAddress( "glBindVertexArray" ));
+	glBindVertexArray( mVAO );
+	PRINT_OPENGL_ERROR( "glBindVertexArray( mVAO )" );
+
+	if( !mShaderBoundingBox->bind() ) {
+		cerr << "[MeshWidget::" << __FUNCTION__ << "] ERROR: binding shader program!" << endl;
+		return;
+	}
+
+	// Set the basics:
+	shaderSetLocationBasicMatrices( mShaderBoundingBox );
+	shaderSetLocationBasicAttribs( mShaderBoundingBox, VBUFF_CUBE, static_cast<int>(sizeof(grVertexElmentBasic)) );
+
+	// Set the fog, whem present:
+	shaderSetLocationBasicFog( mShaderBoundingBox );
+
+	double lineWidth = 0.25;
+	getParamFloatMeshGL( BOUNDING_BOX_LINEWIDTH, &lineWidth );
+
+	// Fetch buffer size (used multiple times)
+	int vboBuffSizeCube = mVertBufObjs[VBUFF_CUBE]->size()/static_cast<int>(sizeof(grVertexElmentBasic));
+
+	// Force each box to be in one (per-box) color.
+	mShaderBoundingBox->setUniformValue( "uColorSolidForce", true );
+
+	for( const AnnotationBBoxGL& box : mAnnotationBBoxes ) {
+
+		mShaderBoundingBox->setUniformValue( "uColorSolid", box.colorR, box.colorG, box.colorB, box.colorA );
+
+		// x-lines
+		mShaderBoundingBox->setUniformValue( "uStrech", box.sizeX+lineWidth, lineWidth, lineWidth );
+		mShaderBoundingBox->setUniformValue( "uOffSet", box.centerX, box.centerY+box.sizeY/2.0, box.centerZ+box.sizeZ/2.0 );
+		glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );
+		mShaderBoundingBox->setUniformValue( "uOffSet", box.centerX, box.centerY+box.sizeY/2.0, box.centerZ-box.sizeZ/2.0 );
+		glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );
+		mShaderBoundingBox->setUniformValue( "uOffSet", box.centerX, box.centerY-box.sizeY/2.0, box.centerZ+box.sizeZ/2.0 );
+		glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );
+		mShaderBoundingBox->setUniformValue( "uOffSet", box.centerX, box.centerY-box.sizeY/2.0, box.centerZ-box.sizeZ/2.0 );
+		glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );
+		// y-lines
+		mShaderBoundingBox->setUniformValue( "uStrech", lineWidth, box.sizeY+lineWidth, lineWidth );
+		mShaderBoundingBox->setUniformValue( "uOffSet", box.centerX+box.sizeX/2.0, box.centerY, box.centerZ+box.sizeZ/2.0 );
+		glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );
+		mShaderBoundingBox->setUniformValue( "uOffSet", box.centerX+box.sizeX/2.0, box.centerY, box.centerZ-box.sizeZ/2.0 );
+		glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );
+		mShaderBoundingBox->setUniformValue( "uOffSet", box.centerX-box.sizeX/2.0, box.centerY, box.centerZ+box.sizeZ/2.0 );
+		glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );
+		mShaderBoundingBox->setUniformValue( "uOffSet", box.centerX-box.sizeX/2.0, box.centerY, box.centerZ-box.sizeZ/2.0 );
+		glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );
+		// z-lines
+		mShaderBoundingBox->setUniformValue( "uStrech", lineWidth, lineWidth, box.sizeZ+lineWidth );
+		mShaderBoundingBox->setUniformValue( "uOffSet", box.centerX+box.sizeX/2.0, box.centerY+box.sizeY/2.0, box.centerZ );
+		glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );
+		mShaderBoundingBox->setUniformValue( "uOffSet", box.centerX+box.sizeX/2.0, box.centerY-box.sizeY/2.0, box.centerZ );
+		glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );
+		mShaderBoundingBox->setUniformValue( "uOffSet", box.centerX-box.sizeX/2.0, box.centerY+box.sizeY/2.0, box.centerZ );
+		glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );
+		mShaderBoundingBox->setUniformValue( "uOffSet", box.centerX-box.sizeX/2.0, box.centerY-box.sizeY/2.0, box.centerZ );
 		glDrawArrays( GL_TRIANGLES, 0, vboBuffSizeCube );
 	}
 

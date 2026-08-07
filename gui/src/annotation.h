@@ -7,6 +7,7 @@
 
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QColor>
 #include "GigaMesh/mesh/mesh.h"
 #include "meshQt.h"
 
@@ -22,6 +23,7 @@ class Annotation {
         double maxY;
         double minZ;
         double maxZ;
+        QColor bboxColor = QColor( 255, 191, 0 ); //!< Color used to render 3D BoundingBox
         QJsonObject annojson;
         std::set<Vertex*> vertices;
         std::set<Vertex*> bboxVertices;

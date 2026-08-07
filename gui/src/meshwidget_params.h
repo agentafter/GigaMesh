@@ -87,6 +87,7 @@ class MeshWidgetParams {
 		                 SHOW_MESH_REDUCED,         //!< Is set when the mesh is moved and the option is enabled the mesh should be shown as a reduced pointcloud or not
 		                 ENABLE_SHOW_MESH_REDUCED,  //!< Toggle if the mesh should be shown as a reduced pointcloud or not
                          EXPORT_TTL_WITH_PNG,  //!< Turn the metadata as ttl during the png export on/off
+                         SHOW_ANNOTATION_BBOXES,    //!< Show the 3D bounding box of each loaded Annotation as a wireframe overlay.
 		                 PARAMS_FLAG_COUNT               //!< Number of flags available
 		};
 		enum eParamInt{ PARAMS_INT_UNDEFINED,       //!< ID for undefined paramaters.
