@@ -84,6 +84,7 @@ class MeshWidget : public QOpenGLWidget, public MeshWidgetParams, public MeshGLC
 
 
     std::list<Annotation*> annotationlist;
+    bool annotationBBoxesDirty = true; //!< Set whenever annotationlist changed, so paintGL() rebuilds the boxes pushed to the GL layer only then.
 
     QJsonObject currentannotationtemplate;
 
@@ -114,6 +115,7 @@ public slots: // ... overloaded from MeshWidgetParams:s
     bool deleteAnnotation();
     std::set<std::string> getCommonAnnotationFieldNames();
     bool addAnnotation(Annotation* anno);
+    void clearAnnotations();
     bool removeAnnotation(QString annoid);
     std::list<Annotation*> getAnnotationsByCoordinate(double x,double y, double z);
     bool    setParamFlagMeshWidget(    MeshWidgetParams::eParamFlag rFlagNr,  bool   rState  ) override;
@@ -391,7 +393,8 @@ private:
 	// Mouse and keyboard interaction
 	//------------------------------------------------------------------------------------------------------------------------------------------------------
 	QPoint  mLastPos;                 //!< Stores the last cursor position. Used to determine movement of the mouse for interaction.
-	Annotation* mLastAnnotation=new Annotation();       //!< Stores the last hovered/selected annotation. Used for comparison for tooltips
+	Annotation  mNoAnnotation;                          //!< Empty placeholder, used by mLastAnnotation to express "nothing hovered" without touching a real Annotation.
+	Annotation* mLastAnnotation=&mNoAnnotation;         //!< Stores the last hovered/selected annotation. Used for comparison for tooltips. Never nullptr - points to mNoAnnotation when nothing is hovered.
 	std::vector<QPoint> mSelectionPoly;    //!< Screen coordinates of the selection poylgon.
 
 	// performance evaluation (frames per second):

@@ -139,6 +139,7 @@ class MeshGLParams {
 			ISOLINES_OFFSET,             //!< Offset of the isolines (GLSL/Shader).
 			ISOLINES_PIXEL_WIDTH,        //!< Pixel width of the isolines (GLSL/Shader).
 			BOUNDING_BOX_LINEWIDTH,      //!< Line width of the bounding box of this mesh.
+			ANNOTATION_BBOX_LINEWIDTH,   //!< Line width of the bounding boxes of the Annotations.
 			NORMALS_LENGTH,              //!< Length of the (face/vertex) normals in world coordinates.
 			NORMALS_WIDTH,               //!< Width of the (face/vertex) normals -- ratio of the length NORMALS_LENGTH.
 			NPR_OUTLINE_WIDTH,           //!< NPR Line-Width of the outlines

@@ -116,8 +116,7 @@ class Primitive : public BitFlagArray  {
 		virtual bool   isLabled() const;
 		virtual bool   isLabelBackGround();
 		        bool   getLabelColor( unsigned char* colRGB, int colorMap=Primitive::COLMAP_BREWER_PAIRED );
-	protected:      bool   getColor( unsigned char* colRGB, int idxCol, int colorMap=Primitive::COLMAP_BREWER_PAIRED );
-	public:
+		static  bool   getColor( unsigned char* colRGB, int idxCol, int colorMap=Primitive::COLMAP_BREWER_PAIRED );
 		enum labelColors{ COLMAP_BREWER_PAIRED,  //!< Paired qualitative colormap for 11 classes from http://colorbrewer.org
 		                  COLMAP_BREWER_SET1     //!< Qualitative colormap for 5 classes with dark colors.
 		                };

@@ -15763,11 +15763,25 @@ bool Mesh::importFuncValsFromFile(const filesystem::path& rFileName, bool withVe
 	return true;
 }
 
+//! Applies a single imported label value to a vertex.
+//! Label zero means background
+static void applyImportedLabel( Vertex* rVertex, uint64_t rLabelNr )
+{
+    if( rLabelNr == 0 )
+    {
+        rVertex->setLabelBackGround();
+        return;
+    }
+    rVertex->setLabel( rLabelNr );
+}
+
 //! Imports labels of the vertices
 //! File extension: .txt or .mat
 //! assumes that the files are either single column with the labels, or double column with index + label
 //! lines starting with # are treated as comments
-//! labels are expected to be integers
+//! labels are expected to be integers, zero meaning background
+//! All vertices are set to background first, so the file only has to name those vertices which
+//! actually carry a label. Missing vertices stay background
 bool Mesh::importLabelsFromFile(const filesystem::path& rFileName, bool withVertIdx)
 {
     ifstream filestr(rFileName);
@@ -15779,6 +15793,9 @@ bool Mesh::importLabelsFromFile(const filesystem::path& rFileName, bool withVert
         LOG::error() << "[Mesh::" << __FUNCTION__ << "] Could not open file: '" << rFileName << "'.\n";
         return false;
     }
+
+    // Label everything as background
+    labelVerticesBackground();
 
     auto numVerts = getVertexNr();
     std::string line;
@@ -15805,11 +15822,11 @@ bool Mesh::importLabelsFromFile(const filesystem::path& rFileName, bool withVert
                 }
                 if(currIndex < numVerts)
                 {
-                    mVertices[currIndex]->setLabel(labelNr);
+                    applyImportedLabel(mVertices[currIndex], labelNr);
                 }
                 else
                 {
-                    LOG::warn() << "[Mesh::" << __FUNCTION__ << "] warning: function value out of range: " << currIndex << "\n";
+                    LOG::warn() << "[Mesh::" << __FUNCTION__ << "] warning: vertex index out of range: " << currIndex << "\n";
                 }
             }
         }
@@ -15827,9 +15844,9 @@ bool Mesh::importLabelsFromFile(const filesystem::path& rFileName, bool withVert
                     continue;
                 }
 
-                if(currIndex > numVerts)
+                if(currIndex >= numVerts)
                 {
-                    LOG::warn() << "[Mesh::" << __FUNCTION__ << "] warning: function value out of range: " << currIndex - 1 << "\n";
+                    LOG::warn() << "[Mesh::" << __FUNCTION__ << "] warning: more labels than vertices: " << currIndex << "\n";
                     break;
                 }
                 try {
@@ -15838,11 +15855,11 @@ bool Mesh::importLabelsFromFile(const filesystem::path& rFileName, bool withVert
                 catch (std::exception& e)
                 {
                     LOG::warn() << "[Mesh::" << __FUNCTION__ << "] File: '" << rFileName << "' contains invalid values!\n";
-                    mVertices[currIndex++]->setLabel(0);
+                    applyImportedLabel(mVertices[currIndex++], 0);
                     continue;
                 }
 
-                mVertices[currIndex++]->setLabel(labelNr);
+                applyImportedLabel(mVertices[currIndex++], labelNr);
             }
         }
     }

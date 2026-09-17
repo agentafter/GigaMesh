@@ -4,6 +4,8 @@
 #include "annotation.h"
 
 #include <utility>
+#include <algorithm>
+#include <tuple>
 #include "GigaMesh/mesh/mesh.h"
 #include "meshQt.h"
 #include "../../core/mesh/MeshIO/PlyWriter.h"
@@ -39,12 +41,21 @@ Annotation::Annotation(QJsonObject annojsonn,QString annoid,MeshQt* mesh,QString
             imgwidth=elem.toObject().find("dimensions")->toObject().find("x")->toDouble();
             imgheight=elem.toObject().find("dimensions")->toObject().find("y")->toDouble();
         }
+        if(tagLabel.isEmpty() && elem.toObject().value("type").toString()=="SpecificResource" &&
+                                 elem.toObject().value("purpose").toString()=="tagging"){
+            tagLabel=elem.toObject().value("source").toObject().value("label").toString();
+        }
+    }
+    if(!annojson.contains("target") || !annojson.find("target")->toObject().contains("selector")){
+        isempty=true;
+        return;
     }
     QJsonObject selectorObject=annojson.find("target")->toObject().find("selector")->toObject();
     QString annotype=selectorObject.find("type")->toString();
-    QString annovalue = selectorObject.find("value")->toString();
+    QString annovalue;
     bool hasbbox=false;
     if(annotype=="WKTSelector" || annotype=="WktSelector"){
+        annovalue = selectorObject.find("value")->toString();
         annovalue=annovalue.replace("POLYGON Z ((","").replace("POLYGON Z((","").replace("))","").trimmed();
         double res[6];
         mesh->wktStringToBBOX(annovalue.toStdString(),res);
@@ -57,6 +68,7 @@ Annotation::Annotation(QJsonObject annojsonn,QString annoid,MeshQt* mesh,QString
         bboxToVertexIds(mesh,false,"");
     }else if(annotype=="SvgSelector" || annotype=="SVGSelector"){
         std::cout << "Annottion ID "<< annotationid << std::endl;
+        annovalue = selectorObject.find("value")->toString();
         annovalue=annovalue.replace("<svg><polygon","").replace("points=\"","").replace("\"></polygon></svg>","").trimmed();
         if((imgheight==0.0 || imgwidth==0.0) && selectorObject.contains("dimensions")){
             imgwidth=selectorObject.find("dimensions")->toObject().find("x")->toDouble();
@@ -70,6 +82,25 @@ Annotation::Annotation(QJsonObject annojsonn,QString annoid,MeshQt* mesh,QString
         maxX=res[2];
         maxY=res[3];
         bboxToVertexIds(mesh,true,side.toStdString());
+    }else if(annotype=="Box3DSelector"){
+        QJsonObject boxValue=selectorObject.find("value")->toObject();
+        QJsonArray boxMin=boxValue.value("min").toArray();
+        QJsonArray boxMax=boxValue.value("max").toArray();
+        if(boxMin.size()<3 || boxMax.size()<3){
+            std::cerr << "[Annotation::" << __FUNCTION__ << "] ERROR: Box3DSelector of '" << annotationid
+                      << "' has no valid min/max!" << std::endl;
+            isempty=true;
+            return;
+        }
+        // Tolerate a min/max given the wrong way around, which would otherwise yield a negative extent.
+        std::tie(minX,maxX)=std::minmax(boxMin.at(0).toDouble(),boxMax.at(0).toDouble());
+        std::tie(minY,maxY)=std::minmax(boxMin.at(1).toDouble(),boxMax.at(1).toDouble());
+        std::tie(minZ,maxZ)=std::minmax(boxMin.at(2).toDouble(),boxMax.at(2).toDouble());
+    }else{
+        std::cerr << "[Annotation::" << __FUNCTION__ << "] ERROR: Unsupported selector type '"
+                  << annotype.toStdString() << "' of annotation '" << annotationid << "'!" << std::endl;
+        isempty=true;
+        return;
     }
 
 }

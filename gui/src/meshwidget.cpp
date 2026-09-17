@@ -282,12 +282,25 @@ std::list<Annotation*> MeshWidget::getAnnotations() {
 
 bool MeshWidget::setAnnotations(std::list<Annotation*> annos) {
     annotationlist=annos;
+    annotationBBoxesDirty=true;
     return true;
 }
 
 bool MeshWidget::addAnnotation(Annotation* anno) {
     annotationlist.push_back(anno);
+    annotationBBoxesDirty=true;
     return true;
+}
+
+//! Drops all Annotations. Called whenever the Mesh they belong to is replaced or removed, as their
+//! bounding boxes - and any Vertex* they may hold - are only meaningful for that one Mesh.
+void MeshWidget::clearAnnotations() {
+    for(Annotation* anno:annotationlist){
+        delete anno;
+    }
+    annotationlist.clear();
+    mLastAnnotation=&mNoAnnotation;
+    annotationBBoxesDirty=true;
 }
 
 bool MeshWidget::removeAnnotation(QString annoid) {
@@ -299,6 +312,7 @@ bool MeshWidget::removeAnnotation(QString annoid) {
         counter+=1;
     }
     //annotationlist.remove(counter);
+    annotationBBoxesDirty=true;
     return true;
 }
 
@@ -912,6 +926,9 @@ bool MeshWidget::fileOpen( const QString& fileName ) {
 	}
 
 
+
+	// The Annotations of the old Mesh do not apply to the new one.
+	clearAnnotations();
 
 	//emit statusMessage( "Loading Mesh from " + fileName );
 	if( mMeshVisual != nullptr ) {
@@ -1804,6 +1821,7 @@ void MeshWidget::unloadMesh() {
 #ifdef DEBUG_SHOW_ALL_METHOD_CALLS
 	cout << "[MeshWidget::" << __FUNCTION__ << "]" << endl;
 #endif
+	clearAnnotations();
 	if( mMeshVisual != nullptr ) {
 		// remove mesh, when one is present:
 		delete mMeshVisual;
@@ -6192,9 +6210,12 @@ void MeshWidget::paintGL() {
 	glEnable( GL_BLEND );
 
 	//! Push the current Annotation bounding boxes down to the GL layer, which draws them as part of glPaint().
-	{
+	//! Only done when the list actually changed - rebuilding and copying it every frame is pointless
+	//! and costly for annotation files holding hundreds of boxes.
+	if( annotationBBoxesDirty ) {
 		std::vector<AnnotationBBoxGL> annoBoxes;
-		constexpr double cMinBoxThickness = 0.5; //!< Minimum extent along an axis, so flat (e.g. 2D-only) annotations remain visible as a thin slab.
+		
+		constexpr double cMinBoxThickness = 0.0;
 		for( Annotation* anno : annotationlist ) {
 			if( anno == nullptr || anno->isempty ) {
 				continue;
@@ -6213,6 +6234,7 @@ void MeshWidget::paintGL() {
 			annoBoxes.push_back( box );
 		}
 		mMeshVisual->setAnnotationBBoxes( annoBoxes );
+		annotationBBoxesDirty = false;
 	}
 
     //! Draw the Mesh.
@@ -7142,10 +7164,11 @@ void MeshWidget::mouseMoveEvent( QMouseEvent* rEvent ) {
         // TODO: check how to improve tooltip display and calculations
         Vector3D clickPos;
         mMeshVisual->getWorldPointOnMesh( qRound(rEvent->position().x()), qRound(rEvent->position().y()), &clickPos );
-        double ylength=this->getMesh()->getMaxY()-this->getMesh()->getMinY();
         bool finished=false;
         if(!mLastAnnotation->isempty){
-            if(mLastAnnotation->pointInAnnotationBBOX3D(clickPos.getX(),ylength-clickPos.getY(),clickPos.getZ())){
+            // The bounding boxes are stored and drawn in plain mesh coordinates, so the cursor position
+            // is used as-is here - otherwise the tooltip would not match what is drawn on screen.
+            if(mLastAnnotation->pointInAnnotationBBOX3D(clickPos.getX(),clickPos.getY(),clickPos.getZ())){
                 if(mLastAnnotation->leftOf!=nullptr && !mLastAnnotation->leftOf->isempty){
                     QToolTip::showText(rEvent->globalPosition().toPoint(),/*QString::fromStdString(mLastAnnotation->leftOf->toHTML())+" "+*/QString::fromStdString(mLastAnnotation->toHTML()));
                 }else{
@@ -7158,7 +7181,7 @@ void MeshWidget::mouseMoveEvent( QMouseEvent* rEvent ) {
         if(!finished) {
             Annotation* foundanno=nullptr;
             for (Annotation* anno: annotationlist) {
-                if (anno->pointInAnnotationBBOX3D(clickPos.getX(), ylength-clickPos.getY(), clickPos.getZ())) {
+                if (anno->pointInAnnotationBBOX3D(clickPos.getX(), clickPos.getY(), clickPos.getZ())) {
                     /*if(anno->leftOf!=nullptr && !anno->leftOf->isempty){
                         QToolTip::showText(rEvent->globalPosition().toPoint(),QString::fromStdString(anno->leftOf->toHTML())+" "+QString::fromStdString(anno->toHTML()));
                     }else{
@@ -7178,7 +7201,9 @@ void MeshWidget::mouseMoveEvent( QMouseEvent* rEvent ) {
                     this->getMesh()->removeFromSelection(mLastAnnotation->vertices);
                 }
                 QToolTip::hideText();
-                mLastAnnotation->isempty=true;
+                // Point back to the placeholder. Flagging the Annotation itself as empty would
+                // permanently remove it from rendering and from any further hit-test.
+                mLastAnnotation=&mNoAnnotation;
             }
         }
     }

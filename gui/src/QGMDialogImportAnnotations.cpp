@@ -6,9 +6,13 @@
 #include <QWidget>
 #include <QColorDialog>
 #include <QFileDialog>
+#include <QJsonParseError>
+#include <QMap>
+#include <QMessageBox>
 #include <iostream>
 #include "QGMDialogImportAnnotations.h"
 #include "ColorSelectorButton.h"
+#include "GigaMesh/mesh/primitive.h"
 
 QGMDialogImportAnnotations::QGMDialogImportAnnotations(MeshWidget* mMeshWidget,QWidget *parent){
     this->meshwidget=mMeshWidget;
@@ -92,6 +96,33 @@ QGMDialogImportAnnotations::QGMDialogImportAnnotations(MeshWidget* mMeshWidget,Q
     this->show();
 }
 
+//! Fetches target.selector.type of an annotation, without dereferencing keys which may be absent.
+static QString selectorTypeOf( const QJsonObject& rAnnotation ) {
+	return rAnnotation.value( "target" ).toObject().value( "selector" ).toObject().value( "type" ).toString();
+}
+
+//! True for selector types whose import writes per-vertex labels. Box3DSelector is drawn as a pure
+//! overlay instead and therefore leaves the labeling of the mesh untouched.
+static bool selectorLabelsVertices( const QString& rSelectorType ) {
+	return rSelectorType == "WKTSelector" || rSelectorType == "WktSelector" ||
+	       rSelectorType == "SvgSelector" || rSelectorType == "SVGSelector";
+}
+
+//! Maps an annotation tag - e.g. "Wedge" or "Character" - to a color of the standard GigaMesh
+//! label palette. Tags are numbered in order of appearance, so the n-th distinct tag of an
+//! annotation file gets the n-th palette color. Untagged annotations share the index of the empty tag.
+static QColor colorForTagLabel( const QString& rTagLabel, QMap<QString,int>& rTagLabelToIndex ) {
+	auto foundIdx = rTagLabelToIndex.find( rTagLabel );
+	if( foundIdx == rTagLabelToIndex.end() ) {
+		foundIdx = rTagLabelToIndex.insert( rTagLabel, static_cast<int>( rTagLabelToIndex.size() ) );
+	}
+	unsigned char colRGB[3];
+	if( !Primitive::getColor( colRGB, foundIdx.value() % 11, Primitive::COLMAP_BREWER_PAIRED ) ) {
+		return QColor( 255, 191, 0 );
+	}
+	return QColor( colRGB[0], colRGB[1], colRGB[2] );
+}
+
 void QGMDialogImportAnnotations::importAnnotations(){
     QString filename = this->filepath->text();
     this->close();
@@ -125,12 +156,30 @@ void QGMDialogImportAnnotations::importAnnotations(){
         QFile jsonfile;
         jsonfile.setFileName(filename);
         qDebug() << filename;
-        jsonfile.open(QIODevice::ReadOnly);
+        if(!jsonfile.open(QIODevice::ReadOnly)){
+            QMessageBox::critical(this,tr("Import Annotations"),
+                                  tr("Could not open '%1':\n%2").arg(filename,jsonfile.errorString()));
+            return;
+        }
         QByteArray data = jsonfile.readAll();
         //qDebug()<<QJsonDocument::fromJson(data);
-        QJsonDocument annoDoc;
-        annoDoc = QJsonDocument::fromJson(data);
+        QJsonParseError parseError{};
+        QJsonDocument annoDoc = QJsonDocument::fromJson(data,&parseError);
+        if(parseError.error!=QJsonParseError::NoError){
+            jsonfile.close();
+            QMessageBox::critical(this,tr("Import Annotations"),
+                                  tr("'%1' is no valid JSON:\n%2 (offset %3)")
+                                          .arg(filename,parseError.errorString()).arg(parseError.offset));
+            return;
+        }
         QJsonObject mainObject = annoDoc.object();
+        if(mainObject.isEmpty()){
+            jsonfile.close();
+            QMessageBox::warning(this,tr("Import Annotations"),
+                                 tr("'%1' contains no annotations. Expected a JSON object mapping "
+                                    "annotation ids to annotations.").arg(filename));
+            return;
+        }
         QStringList thekeys = mainObject.keys();
         std::list<Annotation*> annotationlist;
         std::cout << "Getting border parameters" << std::endl;
@@ -145,17 +194,29 @@ void QGMDialogImportAnnotations::importAnnotations(){
             borderOnly=false;
         }
         //std::cout << "Accessing meshwidget" << std::endl;
-        if (!meshwidget->getMesh()->annotationsLoaded) {
+        //! Only an import which actually writes per-vertex labels needs a clean labeling to start from.
+        //! A file holding nothing but Box3DSelectors is a pure overlay, so any labels already present -
+        //! e.g. the labelid read from the mesh file itself - are kept.
+        bool writesVertexLabels=false;
+        for(const QString& key:thekeys){
+            if(selectorLabelsVertices(selectorTypeOf(mainObject.value(key).toObject()))){
+                writesVertexLabels=true;
+                break;
+            }
+        }
+        if (writesVertexLabels && !meshwidget->getMesh()->annotationsLoaded) {
             meshwidget->getMesh()->labelVerticesNone();
             meshwidget->getMesh()->labelVerticesBackground();
         }
         QColor annocolor=annocolorButton->getColor();
         QColor annobordercolor=annobordercolorButton->getColor();
+        //! Each distinct annotation tag (e.g. "Wedge", "Character") gets the next color of the
+        //! standard GigaMesh label palette, so annotations of different type are told apart by color.
+        QMap<QString,int> tagLabelToIndex;
         std::cout << "Creating annos" << std::endl;
         for (int i = 0; i < mainObject.size(); ++i) {//mainObject.size();
             QJsonObject curannojson = mainObject.find(thekeys.at(i))->toObject();
-            QString annotype = curannojson.find("target")->toObject().find("selector")->toObject().find(
-                    "type")->toString();
+            QString annotype = selectorTypeOf(curannojson);
             std::cout << "Creating first anno" << std::endl;
             Annotation* curanno = new Annotation(curannojson, thekeys.at(i), meshwidget->getMesh(), sidestr);
             std::cout << "CurAnno created " << std::endl;
@@ -165,6 +226,11 @@ void QGMDialogImportAnnotations::importAnnotations(){
             } else if (annotype == "SvgSelector" || annotype == "SVGSelector") {
                 meshwidget->getMesh()->labelVerticesInBBOX(curanno->minX, curanno->maxX, curanno->minY, curanno->maxY,
                                                             side, 2.0, border, borderOnly,annocolor,annobordercolor,thicknessEdit->value());
+            } else if (annotype == "Box3DSelector") {
+                // Boxes are already in mesh coordinates and are shown as a wireframe overlay, so no
+                // vertex labeling takes place. The style/thickness/color fields of this dialog have no
+                // effect on such annotations - their color is derived from the annotation's tag instead.
+                curanno->bboxColor = colorForTagLabel( curanno->tagLabel, tagLabelToIndex );
             }
             annotationlist.push_back(curanno);
             meshwidget->addAnnotation(curanno);

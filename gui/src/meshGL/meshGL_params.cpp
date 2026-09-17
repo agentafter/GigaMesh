@@ -89,6 +89,7 @@ MeshGLParams::MeshGLParams()
 	mParamFlt[ISOLINES_OFFSET]        = 0.0;
 	mParamFlt[ISOLINES_PIXEL_WIDTH]   = 1.5;
 	mParamFlt[BOUNDING_BOX_LINEWIDTH] = 0.3;
+	mParamFlt[ANNOTATION_BBOX_LINEWIDTH] = 0.075;
 	mParamFlt[NORMALS_LENGTH]         = 1.5;
 	mParamFlt[NORMALS_WIDTH]          = 0.1;
 	mParamFlt[NPR_OUTLINE_WIDTH]      = 0.0;
@@ -276,6 +277,12 @@ bool MeshGLParams::setParamFloatMeshGL( MeshGLParams::eParamFlt rParamID, double
 		case BOUNDING_BOX_LINEWIDTH:
 			if( rValue <= 0.0 ) {
 				cerr << "[MeshGLParams::" << __FUNCTION__ << "] BOUNDING_BOX_LINEWIDTH has to be > 0.0: " << rValue << endl;
+				return false;
+			}
+			break;
+		case ANNOTATION_BBOX_LINEWIDTH:
+			if( rValue <= 0.0 ) {
+				cerr << "[MeshGLParams::" << __FUNCTION__ << "] ANNOTATION_BBOX_LINEWIDTH has to be > 0.0: " << rValue << endl;
 				return false;
 			}
 			break;

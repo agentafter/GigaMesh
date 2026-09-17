@@ -17,20 +17,21 @@ class Annotation {
         enum annotationType{Character, Word, Line, Surface};
         Annotation();
         Annotation(QJsonObject annojson,QString annoid, MeshQt* mesh,QString side="noside");
-        double minX;
-        double maxX;
-        double minY;
-        double maxY;
-        double minZ;
-        double maxZ;
+        double minX = 0.0;
+        double maxX = 0.0;
+        double minY = 0.0;
+        double maxY = 0.0;
+        double minZ = 0.0;
+        double maxZ = 0.0;
         QColor bboxColor = QColor( 255, 191, 0 ); //!< Color used to render 3D BoundingBox
+        QString tagLabel;                         //!< Label of the body's "tagging" SpecificResource, e.g. "Wedge" or "Character". Empty when the annotation carries no tag.
         QJsonObject annojson;
         std::set<Vertex*> vertices;
         std::set<Vertex*> bboxVertices;
         Mesh* getAnnotationMesh(Mesh* themesh);
         std::string annotationid;
-        MeshQt* themesh;
-        bool isempty;
+        MeshQt* themesh = nullptr;
+        bool isempty = true;
 
         bool determineZBBOXFromVertices(std::string side);
 
@@ -66,10 +67,10 @@ class Annotation {
 
         std::set<std::string> fieldnames;
 
-        Annotation* leftOf;
-        Annotation* rightOf;
-        Annotation* above;
-        Annotation* below;
+        Annotation* leftOf  = nullptr;
+        Annotation* rightOf = nullptr;
+        Annotation* above   = nullptr;
+        Annotation* below   = nullptr;
 
     private:
 

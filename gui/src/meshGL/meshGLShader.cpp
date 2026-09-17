@@ -1181,12 +1181,17 @@ void MeshGLShader::vboPaintAnnotationBoxes() {
 	// Set the basics:
 	shaderSetLocationBasicMatrices( mShaderBoundingBox );
 	shaderSetLocationBasicAttribs( mShaderBoundingBox, VBUFF_CUBE, static_cast<int>(sizeof(grVertexElmentBasic)) );
+	// Required, as vboPaintBoundingBox() shares this shader program and may have left its light
+	// uniforms behind, which would tint the flat per-box color set below.
+	shaderSetLocationBasicLight( mShaderBoundingBox );
 
 	// Set the fog, whem present:
 	shaderSetLocationBasicFog( mShaderBoundingBox );
 
-	double lineWidth = 0.25;
-	getParamFloatMeshGL( BOUNDING_BOX_LINEWIDTH, &lineWidth );
+	// Annotation boxes have their own line width: they are typically much smaller than the mesh,
+	// so the width of the Mesh's own bounding box would make them merge into a solid block.
+	double lineWidth = 0.075;
+	getParamFloatMeshGL( ANNOTATION_BBOX_LINEWIDTH, &lineWidth );
 
 	// Fetch buffer size (used multiple times)
 	int vboBuffSizeCube = mVertBufObjs[VBUFF_CUBE]->size()/static_cast<int>(sizeof(grVertexElmentBasic));

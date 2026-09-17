@@ -62,9 +62,9 @@ MeshGLColors::MeshGLColors() {
 	mColorSetting[COLOR_POLYLINE_MONO][2] = 255;
 	mColorSetting[COLOR_POLYLINE_MONO][3] = 255;
 
-	mColorSetting[COLOR_LABEL_NOT_ASSIGNED][0] = 157;
-	mColorSetting[COLOR_LABEL_NOT_ASSIGNED][1] =  24;
-	mColorSetting[COLOR_LABEL_NOT_ASSIGNED][2] =  24;
+	mColorSetting[COLOR_LABEL_NOT_ASSIGNED][0] = 187;
+	mColorSetting[COLOR_LABEL_NOT_ASSIGNED][1] = 187;
+	mColorSetting[COLOR_LABEL_NOT_ASSIGNED][2] = 187;
 	mColorSetting[COLOR_LABEL_NOT_ASSIGNED][3] = 255;
 
 	mColorSetting[COLOR_LABEL_SOLID][0]        =   0;
